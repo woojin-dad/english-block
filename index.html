@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>말랑말랑 영어 블록 모험 🧩</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti for Celebration Effects -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jua&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Jua', 'Fredoka', cursive, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .font-english {
+      font-family: 'Fredoka', 'Nunito', sans-serif;
+    }
+
+    /* 3D Toy Button effect */
+    .toy-btn {
+      transition: all 0.1s ease-in-out;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.18);
+    }
+    .toy-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.18);
+    }
+
+    /* Word Blocks */
+    .word-block {
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.14);
+      cursor: grab;
+    }
+    .word-block:hover {
+      transform: translateY(-2px) scale(1.03);
+    }
+    .word-block:active {
+      transform: translateY(2px) scale(0.97);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.14);
+      cursor: grabbing;
+    }
+
+    .block-slot-zone {
+      min-height: 85px;
+      border: 3px dashed #93c5fd;
+      border-radius: 1.5rem;
+      background: linear-gradient(135deg, rgba(239, 246, 255, 0.8), rgba(243, 232, 255, 0.7));
+    }
+
+    .block-slot-zone.drag-over {
+      border-color: #3b82f6;
+      background-color: #dbeafe;
+      transform: scale(1.01);
+    }
+
+    /* Animations */
+    @keyframes happyBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .animate-happy {
+      animation: happyBounce 0.5s ease infinite alternate;
+    }
+
+    @keyframes shakeWrong {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shakeWrong 0.35s ease;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-amber-100 via-indigo-50 to-sky-100 min-h-screen flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 selection:bg-yellow-200">
+
+  <!-- Header Section -->
+  <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border-2 border-indigo-100 gap-3 mb-3">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-amber-300 rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-amber-400">
+        🦁
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-black text-indigo-800 tracking-wide flex items-center gap-1.5">
+          블록 영작 원정대
+          <span class="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full uppercase tracking-wider font-english font-bold">Cloud</span>
+        </h1>
+        <p class="text-xs text-slate-500 font-sans">구글 시트 연동 블록 영작 마스터!</p>
+      </div>
+    </div>
+
+    <!-- Stats & Cloud Sync Control -->
+    <div class="flex items-center gap-2 sm:gap-3 ml-auto">
+      <div class="flex items-center gap-1 bg-amber-50 border-2 border-amber-300 px-3 py-1.5 rounded-2xl" title="획득 코인">
+        <span class="text-lg">🪙</span>
+        <span id="coinScore" class="font-bold text-amber-700 text-base sm:text-lg">0</span>
+      </div>
+      <div class="flex items-center gap-1 bg-rose-50 border-2 border-rose-300 px-2.5 py-1.5 rounded-2xl" title="연속 정답 스트릭">
+        <span class="text-lg">🔥</span>
+        <span id="streakCount" class="font-bold text-rose-600 text-base sm:text-lg">0</span>
+      </div>
+      
+      <button id="refreshSheetBtn" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3 py-2 rounded-2xl flex items-center gap-1" title="구글 시트 최신 문장 다시 가져오기">
+        <span id="refreshIcon">🔄</span>
+        <span class="hidden sm:inline">새로고침</span>
+      </button>
+
+      <button id="configModalBtn" class="toy-btn bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-2 rounded-2xl flex items-center gap-1" title="구글 시트 URL 설정">
+        <span>📊</span>
+        <span class="hidden sm:inline">시트 설정</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Game Layout -->
+  <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
+    
+    <!-- Question Card -->
+    <div class="bg-white rounded-3xl p-4 sm:p-6 shadow-xl border-4 border-white/70 relative overflow-hidden">
+      <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center gap-2 text-sm">
+          <span class="bg-indigo-100 text-indigo-800 font-black px-3 py-1 rounded-xl text-xs sm:text-sm" id="questionBadge">문제 1 / 1</span>
+          <span id="categoryBadge" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-xl font-sans font-bold">기본 연습</span>
+          <span id="dataSourceBadge" class="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">샘플 모드</span>
+        </div>
+        
+        <button id="hintToggleBtn" class="text-xs sm:text-sm bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1.5 rounded-xl border border-amber-300 flex items-center gap-1 transition">
+          <span>💡 힌트 보기</span>
+        </button>
+      </div>
+
+      <!-- Korean sentence prompt -->
+      <div class="text-center py-2 sm:py-3">
+        <span class="text-xs font-bold text-indigo-400 block mb-1">우리말 문장을 보고 영어 블록을 맞춰보세요!</span>
+        <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-indigo-950 tracking-tight leading-snug">
+          로딩 중...
+        </div>
+        
+        <div id="hintBox" class="hidden mt-3 p-2.5 sm:p-3 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 text-xs sm:text-sm inline-block max-w-xl transition-all">
+          <span class="font-bold">단어 힌트:</span> <span id="hintContent">-</span>
+        </div>
+      </div>
+
+      <!-- Mascot & Bubble Feedback -->
+      <div class="flex justify-center items-center mt-1">
+        <div id="mascotReaction" class="text-3xl sm:text-4xl transition-all duration-300">
+          🐱
+        </div>
+        <div id="speechBubble" class="ml-2.5 text-xs sm:text-sm bg-indigo-50 text-indigo-800 border border-indigo-200 px-3 py-1 rounded-2xl font-bold max-w-xs sm:max-w-md truncate">
+          알맞은 블록을 순서대로 골라봐!
+        </div>
+      </div>
+    </div>
+
+    <!-- Dropzone: Assembled Sentence -->
+    <div class="bg-white/90 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-indigo-100">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
+            <span>🎯</span> 내가 만든 문장
+          </span>
+          <span class="text-xs text-slate-400 font-sans hidden sm:inline">(블록을 누르면 보관함으로 돌아갑니다)</span>
+        </div>
+        <button id="clearSlotsBtn" class="text-xs text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-xl transition flex items-center gap-1">
+          <span>🔄</span> 비우기
+        </button>
+      </div>
+
+      <div id="assembledZone" class="block-slot-zone p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-3 transition-colors duration-200">
+        <div id="emptySlotPlaceholder" class="w-full text-center text-slate-400 text-xs sm:text-sm py-3.5 flex flex-col items-center justify-center pointer-events-none">
+          <span class="text-2xl mb-1">👇</span>
+          <span>아래 단어 블록을 클릭하거나 위로 끌어와 문장을 만들어보세요!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Word Bank Pool -->
+    <div class="bg-white/95 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-xl border-2 border-indigo-100">
+      <div class="flex items-center justify-between mb-2.5">
+        <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
+          <span>📦</span> 단어 블록 보관함
+        </span>
+        <span class="text-xs text-slate-400 font-sans">터치하거나 끌어보세요</span>
+      </div>
+
+      <div id="wordBankZone" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 min-h-[90px] p-3 bg-slate-50 rounded-2xl border border-slate-200">
+        <!-- Word Blocks rendered here -->
+      </div>
+    </div>
+
+    <!-- Action Buttons Bar -->
+    <div class="flex items-center justify-center gap-3 sm:gap-4 mt-1 pb-4">
+      <button id="speakBtn" class="toy-btn bg-purple-500 hover:bg-purple-600 text-white font-bold text-base sm:text-lg px-5 py-3 rounded-2xl flex items-center gap-2 shadow-md">
+        <span class="text-xl">🔊</span>
+        <span>듣기</span>
+      </button>
+
+      <button id="checkBtn" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg sm:text-xl px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 shadow-md">
+        <span>✨ 정답 확인</span>
+      </button>
+
+      <button id="nextBtn" class="hidden toy-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg sm:text-xl px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
+        <span>다음 문제 ➡️</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- Google Sheet Configuration Modal -->
+  <div id="configModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border-4 border-indigo-100 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-xl font-black text-indigo-900 flex items-center gap-2">
+          <span>📊</span> 구글 스프레드시트 연동
+        </h3>
+        <button id="closeConfigBtn" class="text-slate-400 hover:text-slate-600 text-2xl font-black">&times;</button>
+      </div>
+
+      <p class="text-xs text-slate-600 mb-4 font-sans leading-relaxed">
+        구글 시트의 [파일] ➜ [공유] ➜ <b>[웹에 게시]</b>에서 형식을 <b>'쉼표로 구분된 값(.csv)'</b>으로 선택하고 링크를 아래에 붙여넣어 주세요.
+      </p>
+
+      <!-- Sheet Column Guide -->
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-3.5 text-xs text-indigo-950 mb-4 font-sans space-y-1">
+        <div class="font-bold text-indigo-700 mb-1">📌 권장 열(Column) 구성 안내</div>
+        <div>• <b>A열:</b> 한글 문장 (예: <i>나는 사과를 먹어요.</i>)</div>
+        <div>• <b>B열:</b> 영어 정답 문장 (예: <i>I eat an apple.</i>)</div>
+        <div>• <b>C열:</b> 방해 단어 (선택 / 쉼표 또는 공백 구분, 예: <i>eats, banana</i>)</div>
+        <div>• <b>D열:</b> 힌트 (선택 / 예: <i>eat(먹다), apple(사과)</i>)</div>
+        <div>• <b>E열:</b> 카테고리/주제 (선택 / 예: <i>일상 표현</i>)</div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">구글 시트 CSV 링크</label>
+          <input id="inputSheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" class="w-full px-4 py-2.5 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-xs sm:text-sm font-sans">
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="headerSkipCheck" class="w-4 h-4 rounded text-indigo-600" checked>
+          <label for="headerSkipCheck" class="text-xs font-bold text-slate-700 font-sans">첫 번째 행(헤더 제목) 건너뛰기</label>
+        </div>
+
+        <div class="pt-2 flex flex-col sm:flex-row gap-2.5">
+          <button id="saveSheetUrlBtn" class="flex-1 toy-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl text-sm">
+            🔗 저장하고 문장 불러오기
+          </button>
+          <button id="loadDefaultDataBtn" class="toy-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-3 rounded-2xl text-xs">
+            기본 샘플 복구
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. Web Audio API Sound Synthesizer (No external sound file dependencies)
+       ========================================================================== */
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, type = 'sine', duration = 0.15, delay = 0) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      setTimeout(() => {
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {
+          console.warn("Audio play error:", e);
+        }
+      }, delay * 1000);
+    }
+
+    const sounds = {
+      click() { playTone(580, 'triangle', 0.07); },
+      drop() { playTone(440, 'sine', 0.09); },
+      correct() {
+        // Cheerful C major arpeggio (C5 -> E5 -> G5 -> C6)
+        playTone(523.25, 'sine', 0.14, 0.0);
+        playTone(659.25, 'sine', 0.14, 0.08);
+        playTone(783.99, 'sine', 0.14, 0.16);
+        playTone(1046.50, 'triangle', 0.35, 0.24);
+      },
+      wrong() {
+        playTone(320, 'sawtooth', 0.15, 0.0);
+        playTone(220, 'sawtooth', 0.25, 0.12);
+      },
+      win() {
+        [523, 659, 784, 1046, 1318].forEach((f, i) => playTone(f, 'triangle', 0.22, i * 0.1));
+      }
+    };
+
+    /* ==========================================================================
+       2. Default Built-in Questions (Safe fallback)
+       ========================================================================== */
+    const DEFAULT_QUESTIONS = [
+      {
+        korean: "나는 매일 아침 사과를 먹어요.",
+        target: ["I", "eat", "an", "apple", "every", "morning", "."],
+        distractors: ["eats", "apples"],
+        hint: "I (나), eat (먹다), an apple (사과 하나), every morning (매일 아침)",
+        category: "일상 생활"
+      },
+      {
+        korean: "그 고양이는 침대 위에서 자고 있어요.",
+        target: ["The", "cat", "is", "sleeping", "on", "the", "bed", "."],
+        distractors: ["sleep", "under"],
+        hint: "cat (고양이), sleeping (자고 있는), on the bed (침대 위에)",
+        category: "동물 친구들"
+      },
+      {
+        korean: "우리는 공원에서 축구를 할 수 있어요.",
+        target: ["We", "can", "play", "soccer", "in", "the", "park", "."],
+        distractors: ["plays", "basketball"],
+        hint: "can (~할 수 있다), soccer (축구), park (공원)",
+        category: "운동과 놀이"
+      },
+      {
+        korean: "그녀는 피아노 연주를 정말 잘해요.",
+        target: ["She", "plays", "the", "piano", "very", "well", "."],
+        distractors: ["play", "good"],
+        hint: "She (그녀), piano (피아노), very well (매우 잘)",
+        category: "취미"
+      },
+      {
+        korean: "너는 왜 웃고 있니?",
+        target: ["Why", "are", "you", "smiling", "?"],
+        distractors: ["is", "crying"],
+        hint: "Why (왜), smile (미소짓다)",
+        category: "의문문"
+      }
+    ];
+
+    /* ==========================================================================
+       3. Color Palette & State Variables
+       ========================================================================== */
+    const BLOCK_PALETTES = [
+      { bg: "bg-amber-100", text: "text-amber-950", border: "border-amber-300", hover: "hover:bg-amber-200" },
+      { bg: "bg-emerald-100", text: "text-emerald-950", border: "border-emerald-300", hover: "hover:bg-emerald-200" },
+      { bg: "bg-sky-100", text: "text-sky-950", border: "border-sky-300", hover: "hover:bg-sky-200" },
+      { bg: "bg-purple-100", text: "text-purple-950", border: "border-purple-300", hover: "hover:bg-purple-200" },
+      { bg: "bg-rose-100", text: "text-rose-950", border: "border-rose-300", hover: "hover:bg-rose-200" },
+      { bg: "bg-orange-100", text: "text-orange-950", border: "border-orange-300", hover: "hover:bg-orange-200" }
+    ];
+
+    let questions = [];
+    let currentIndex = 0;
+    let coins = parseInt(localStorage.getItem('block_english_coins') || '0', 10);
+    let currentStreak = 0;
+    let isCurrentAnswerChecked = false;
+
+    // DOM References
+    const coinScoreEl = document.getElementById('coinScore');
+    const streakCountEl = document.getElementById('streakCount');
+    const koreanSentenceEl = document.getElementById('koreanSentence');
+    const questionBadgeEl = document.getElementById('questionBadge');
+    const categoryBadgeEl = document.getElementById('categoryBadge');
+    const dataSourceBadgeEl = document.getElementById('dataSourceBadge');
+    const hintBoxEl = document.getElementById('hintBox');
+    const hintContentEl = document.getElementById('hintContent');
+    const hintToggleBtn = document.getElementById('hintToggleBtn');
+    const assembledZoneEl = document.getElementById('assembledZone');
+    const wordBankZoneEl = document.getElementById('wordBankZone');
+    const emptySlotPlaceholderEl = document.getElementById('emptySlotPlaceholder');
+    const checkBtn = document.getElementById('checkBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const speakBtn = document.getElementById('speakBtn');
+    const clearSlotsBtn = document.getElementById('clearSlotsBtn');
+    const mascotReactionEl = document.getElementById('mascotReaction');
+    const speechBubbleEl = document.getElementById('speechBubble');
+
+    // Config Modal Elements
+    const configModal = document.getElementById('configModal');
+    const configModalBtn = document.getElementById('configModalBtn');
+    const closeConfigBtn = document.getElementById('closeConfigBtn');
+    const inputSheetUrl = document.getElementById('inputSheetUrl');
+    const headerSkipCheck = document.getElementById('headerSkipCheck');
+    const saveSheetUrlBtn = document.getElementById('saveSheetUrlBtn');
+    const loadDefaultDataBtn = document.getElementById('loadDefaultDataBtn');
+    const refreshSheetBtn = document.getElementById('refreshSheetBtn');
+    const refreshIcon = document.getElementById('refreshIcon');
+
+    coinScoreEl.textContent = coins.toLocaleString();
+    streakCountEl.textContent = currentStreak;
+
+    /* ==========================================================================
+       4. Natural English Tokenizer (Punctuation aware)
+       ========================================================================== */
+    function tokenizeEnglishSentence(sentence) {
+      if (!sentence) return [];
+      // Clean leading and trailing whitespace
+      const clean = sentence.trim();
+      // Regular expression matching words or standalone punctuation (.,!?)
+      const regex = /[A-Za-z0-9'\-]+|[.,!?;]/g;
+      const tokens = clean.match(regex);
+      return tokens || clean.split(/\s+/);
+    }
+
+    function parseDistractors(distractorText) {
+      if (!distractorText) return [];
+      // Split by commas or spaces and remove empty items
+      return distractorText
+        .split(/[,;\s]+/)
+        .map(w => w.trim())
+        .filter(w => w.length > 0);
+    }
+
+    /* ==========================================================================
+       5. Robust CSV Parser (Handling quotes, commas, newlines)
+       ========================================================================== */
+    function parseCSV(text) {
+      const rows = [];
+      let currentRow = [];
+      let currentVal = '';
+      let insideQuote = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+          if (insideQuote && nextChar === '"') {
+            currentVal += '"';
+            i++; // skip escaped quote
+          } else {
+            insideQuote = !insideQuote;
+          }
+        } else if (char === ',' && !insideQuote) {
+          currentRow.push(currentVal.trim());
+          currentVal = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuote) {
+          if (char === '\r' && nextChar === '\n') i++; // skip CRLF
+          currentRow.push(currentVal.trim());
+          if (currentRow.some(val => val.length > 0)) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentVal = '';
+        } else {
+          currentVal += char;
+        }
+      }
+      if (currentVal.length > 0 || currentRow.length > 0) {
+        currentRow.push(currentVal.trim());
+        if (currentRow.some(val => val.length > 0)) {
+          rows.push(currentRow);
+        }
+      }
+      return rows;
+    }
+
+    /* ==========================================================================
+       6. Google Sheet Fetcher & Data Loader
+       ========================================================================== */
+    async function fetchQuestionsFromSheet(url, skipHeader = true) {
+      if (!url) return null;
+      try {
+        // Add timestamp to prevent browser cache
+        const separator = url.includes('?') ? '&' : '?';
+        const fetchUrl = `${url}${separator}cb=${Date.now()}`;
+        const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const csvText = await response.text();
+        const parsedRows = parseCSV(csvText);
+        if (!parsedRows || parsedRows.length === 0) return [];
+
+        const dataRows = skipHeader ? parsedRows.slice(1) : parsedRows;
+        const validQuestions = [];
+
+        dataRows.forEach(row => {
+          const korean = row[0] || '';
+          const english = row[1] || '';
+          const distractors = row[2] || '';
+          const hint = row[3] || '';
+          const category = row[4] || '시트 학습';
+
+          if (korean.trim() && english.trim()) {
+            validQuestions.push({
+              korean: korean.trim(),
+              target: tokenizeEnglishSentence(english),
+              distractors: parseDistractors(distractors),
+              hint: hint.trim(),
+              category: category.trim()
+            });
+          }
+        });
+
+        return validQuestions;
+      } catch (err) {
+        console.error("Failed to load Google Sheet data:", err);
+        return null;
+      }
+    }
+
+    /* ==========================================================================
+       7. Web Speech API (TTS)
+       ========================================================================== */
+    function speakSentence(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.88; // 약간 느리고 또박또박한 10세 어린이 맞춤 속도
+      utterance.pitch = 1.05; // 부드럽고 친근한 톤
+
+      const voices = window.speechSynthesis.getVoices();
+      const childFriendlyVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Natural') || v.name.includes('Google US')));
+      if (childFriendlyVoice) utterance.voice = childFriendlyVoice;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {};
+    }
+
+    /* ==========================================================================
+       8. Game Mechanics & Rendering
+       ========================================================================== */
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function hashString(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash;
+    }
+
+    function loadQuestion(index) {
+      if (questions.length === 0) {
+        koreanSentenceEl.textContent = "표시할 문장이 없습니다. 구글 시트를 확인해주세요!";
+        return;
+      }
+
+      if (index >= questions.length) {
+        triggerGameCompletion();
+        return;
+      }
+
+      currentIndex = index;
+      isCurrentAnswerChecked = false;
+      checkBtn.classList.remove('hidden');
+      nextBtn.classList.add('hidden');
+
+      const q = questions[currentIndex];
+      koreanSentenceEl.textContent = q.korean;
+      questionBadgeEl.textContent = `문제 ${currentIndex + 1} / ${questions.length}`;
+      categoryBadgeEl.textContent = q.category || '영작 모험';
+
+      // Hint reset
+      hintBoxEl.classList.add('hidden');
+      if (q.hint && q.hint.trim().length > 0) {
+        hintToggleBtn.classList.remove('hidden');
+        hintContentEl.textContent = q.hint;
+      } else {
+        hintToggleBtn.classList.add('hidden');
+      }
+
+      // Clear zones
+      assembledZoneEl.innerHTML = '';
+      assembledZoneEl.appendChild(emptySlotPlaceholderEl);
+      emptySlotPlaceholderEl.style.display = 'flex';
+      wordBankZoneEl.innerHTML = '';
+
+      // Prepare and shuffle blocks
+      const allWords = [...q.target];
+      if (q.distractors && q.distractors.length > 0) {
+        allWords.push(...q.distractors);
+      }
+      const shuffledWords = shuffle(allWords);
+
+      shuffledWords.forEach((word, idx) => {
+        const block = createWordBlock(word, idx);
+        wordBankZoneEl.appendChild(block);
+      });
+
+      mascotReactionEl.textContent = "🐱";
+      speechBubbleEl.textContent = "알맞은 블록을 순서대로 골라봐!";
+    }
+
+    function createWordBlock(wordText, id) {
+      const palette = BLOCK_PALETTES[Math.abs(hashString(wordText)) % BLOCK_PALETTES.length];
+      const block = document.createElement('div');
+      
+      const isPunctuation = [".", ",", "!", "?"].includes(wordText);
+      const paddingClass = isPunctuation ? "px-3.5 py-1.5 text-2xl" : "px-4 py-2 sm:px-5 sm:py-2.5 text-lg sm:text-xl";
+
+      block.className = `word-block font-english font-bold ${paddingClass} rounded-2xl border-2 ${palette.bg} ${palette.text} ${palette.border} ${palette.hover} cursor-pointer select-none flex items-center justify-center gap-1`;
+      block.setAttribute('draggable', 'true');
+      block.setAttribute('data-word', wordText);
+      block.setAttribute('data-id', `block-${id}-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`);
+
+      block.innerHTML = `<span>${wordText}</span>`;
+
+      // Touch / Click to toggle between Bank and Assembled
+      block.addEventListener('click', () => {
+        sounds.click();
+        if (block.parentElement === wordBankZoneEl) {
+          moveBlockToAssembled(block);
+        } else {
+          moveBlockToBank(block);
+        }
+      });
+
+      // Drag and Drop
+      block.addEventListener('dragstart', (e) => {
+        sounds.click();
+        block.classList.add('opacity-40', 'scale-95');
+        e.dataTransfer.setData('text/plain', block.getAttribute('data-id'));
+      });
+
+      block.addEventListener('dragend', () => {
+        block.classList.remove('opacity-40', 'scale-95');
+      });
+
+      return block;
+    }
+
+    function moveBlockToAssembled(block) {
+      emptySlotPlaceholderEl.style.display = 'none';
+      assembledZoneEl.appendChild(block);
+      sounds.drop();
+    }
+
+    function moveBlockToBank(block) {
+      wordBankZoneEl.appendChild(block);
+      sounds.drop();
+      if (assembledZoneEl.querySelectorAll('.word-block').length === 0) {
+        emptySlotPlaceholderEl.style.display = 'flex';
+      }
+    }
+
+    // Dropzone Listeners
+    [assembledZoneEl, wordBankZoneEl].forEach(zone => {
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+      });
+
+      zone.addEventListener('dragleave', () => {
+        zone.classList.remove('drag-over');
+      });
+
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        const blockId = e.dataTransfer.getData('text/plain');
+        const block = document.querySelector(`[data-id="${blockId}"]`);
+        if (block) {
+          if (zone === assembledZoneEl) {
+            moveBlockToAssembled(block);
+          } else {
+            moveBlockToBank(block);
+          }
+        }
+      });
+    });
+
+    function getAssembledSentence() {
+      const blocks = assembledZoneEl.querySelectorAll('.word-block');
+      const words = [];
+      blocks.forEach(b => words.push(b.getAttribute('data-word')));
+      return words;
+    }
+
+    function formatForSpeech(wordList) {
+      return wordList.reduce((acc, word) => {
+        if ([".", ",", "!", "?"].includes(word)) {
+          return acc + word;
+        }
+        return acc === "" ? word : acc + " " + word;
+      }, "");
+    }
+
+    /* ==========================================================================
+       9. Verification & Controls
+       ========================================================================== */
+    checkBtn.addEventListener('click', () => {
+      const q = questions[currentIndex];
+      const userWords = getAssembledSentence();
+
+      if (userWords.length === 0) {
+        mascotReactionEl.textContent = "🤔";
+        speechBubbleEl.textContent = "먼저 단어 블록을 조립해줘!";
+        playTone(300, 'sine', 0.1);
+        return;
+      }
+
+      // Check if identical to target
+      const isCorrect = userWords.length === q.target.length && 
+        userWords.every((word, i) => word.toLowerCase() === q.target[i].toLowerCase());
+
+      if (isCorrect) {
+        sounds.correct();
+        triggerConfetti();
+
+        mascotReactionEl.textContent = "🥳";
+        speechBubbleEl.textContent = "정답이야! 참 잘했어! 🌟";
+
+        // Increment Coins & Streak
+        coins += 10;
+        currentStreak += 1;
+        coinScoreEl.textContent = coins.toLocaleString();
+        streakCountEl.textContent = currentStreak;
+        localStorage.setItem('block_english_coins', coins);
+
+        // TTS Read Aloud
+        const fullSpeech = formatForSpeech(q.target);
+        speakSentence(fullSpeech);
+
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.remove('hidden');
+        isCurrentAnswerChecked = true;
+      } else {
+        sounds.wrong();
+        assembledZoneEl.classList.add('animate-shake');
+        setTimeout(() => assembledZoneEl.classList.remove('animate-shake'), 400);
+
+        currentStreak = 0;
+        streakCountEl.textContent = currentStreak;
+
+        mascotReactionEl.textContent = "🐣";
+        speechBubbleEl.textContent = "아쉬워요! 단어 순서를 다시 확인해볼까?";
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      sounds.click();
+      loadQuestion(currentIndex + 1);
+    });
+
+    speakBtn.addEventListener('click', () => {
+      sounds.click();
+      const currentBuilt = getAssembledSentence();
+      if (currentBuilt.length > 0) {
+        speakSentence(formatForSpeech(currentBuilt));
+      } else {
+        const q = questions[currentIndex];
+        if (q) speakSentence(formatForSpeech(q.target));
+      }
+    });
+
+    clearSlotsBtn.addEventListener('click', () => {
+      sounds.click();
+      const assembledBlocks = Array.from(assembledZoneEl.querySelectorAll('.word-block'));
+      assembledBlocks.forEach(block => wordBankZoneEl.appendChild(block));
+      emptySlotPlaceholderEl.style.display = 'flex';
+    });
+
+    hintToggleBtn.addEventListener('click', () => {
+      sounds.click();
+      hintBoxEl.classList.toggle('hidden');
+    });
+
+    function triggerConfetti() {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#38bdf8', '#facc15', '#f43f5e', '#4ade80', '#c084fc']
+      });
+    }
+
+    function triggerGameCompletion() {
+      sounds.win();
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.6 }
+      });
+
+      koreanSentenceEl.textContent = "🎉 축하합니다! 모든 미션을 완료했어요!";
+      assembledZoneEl.innerHTML = `
+        <div class="w-full py-8 text-center">
+          <p class="text-2xl font-black text-indigo-800 mb-2">당신은 최고의 영작 탐험가! 🏆</p>
+          <p class="text-slate-500 mb-4 font-sans">누적 획득 코인: ${coins.toLocaleString()}개 🪙</p>
+          <button onclick="loadQuestion(0)" class="toy-btn bg-emerald-500 text-white font-bold text-lg px-8 py-3 rounded-2xl">
+            처음부터 다시 도전하기 🚀
+          </button>
+        </div>
+      `;
+      wordBankZoneEl.innerHTML = '';
+      checkBtn.classList.add('hidden');
+      nextBtn.classList.add('hidden');
+      hintToggleBtn.classList.add('hidden');
+      mascotReactionEl.textContent = "👑";
+      speechBubbleEl.textContent = "완벽해! 오늘 공부도 대성공이야!";
+    }
+
+    /* ==========================================================================
+       10. Cloud Sheet Sync Handlers
+       ========================================================================== */
+    async function loadDataAndInitialize(forceRefresh = false) {
+      const savedSheetUrl = localStorage.getItem('block_english_sheet_url');
+      const skipHeader = localStorage.getItem('block_english_skip_header') !== 'false';
+
+      if (savedSheetUrl) {
+        refreshIcon.classList.add('animate-spin');
+        dataSourceBadgeEl.textContent = "시트 연결 중...";
+        dataSourceBadgeEl.className = "text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200";
+
+        const sheetData = await fetchQuestionsFromSheet(savedSheetUrl, skipHeader);
+        refreshIcon.classList.remove('animate-spin');
+
+        if (sheetData && sheetData.length > 0) {
+          questions = sheetData;
+          dataSourceBadgeEl.textContent = "구글 시트 연동됨";
+          dataSourceBadgeEl.className = "text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200";
+          speechBubbleEl.textContent = `구글 시트에서 ${questions.length}개의 문장을 가져왔어요! ✨`;
+          loadQuestion(0);
+          return;
+        } else {
+          speechBubbleEl.textContent = "구글 시트 로딩에 실패하여 기본 문장으로 시작합니다.";
+        }
+      }
+
+      // Fallback
+      questions = [...DEFAULT_QUESTIONS];
+      dataSourceBadgeEl.textContent = "기본 샘플 모드";
+      dataSourceBadgeEl.className = "text-[11px] text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200";
+      loadQuestion(0);
+    }
+
+    // Modal Control
+    configModalBtn.addEventListener('click', () => {
+      sounds.click();
+      inputSheetUrl.value = localStorage.getItem('block_english_sheet_url') || '';
+      headerSkipCheck.checked = localStorage.getItem('block_english_skip_header') !== 'false';
+      configModal.classList.remove('hidden');
+    });
+
+    closeConfigBtn.addEventListener('click', () => {
+      sounds.click();
+      configModal.classList.add('hidden');
+    });
+
+    configModal.addEventListener('click', (e) => {
+      if (e.target === configModal) configModal.classList.add('hidden');
+    });
+
+    saveSheetUrlBtn.addEventListener('click', async () => {
+      sounds.click();
+      const url = inputSheetUrl.value.trim();
+      const skip = headerSkipCheck.checked;
+
+      if (!url) {
+        speechBubbleEl.textContent = "구글 시트 URL을 입력해주세요!";
+        return;
+      }
+
+      localStorage.setItem('block_english_sheet_url', url);
+      localStorage.setItem('block_english_skip_header', skip ? 'true' : 'false');
+      configModal.classList.add('hidden');
+
+      await loadDataAndInitialize(true);
+    });
+
+    loadDefaultDataBtn.addEventListener('click', () => {
+      sounds.click();
+      localStorage.removeItem('block_english_sheet_url');
+      configModal.classList.add('hidden');
+      loadDataAndInitialize(true);
+    });
+
+    refreshSheetBtn.addEventListener('click', () => {
+      sounds.click();
+      loadDataAndInitialize(true);
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadDataAndInitialize();
+    });
+  </script>
+</body>
+</html>
