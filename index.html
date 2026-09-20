@@ -84,7 +84,7 @@
 </head>
 <body class="bg-gradient-to-b from-amber-100 via-indigo-50 to-sky-100 min-h-screen flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 selection:bg-yellow-200">
 
-  <!-- Header Section (코인, 연속정답, 새로고침만 남겨 깔끔하게 구성) -->
+  <!-- Header Section (코인, 연속정답, 새로고침만 깔끔하게 유지) -->
   <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border-2 border-indigo-100 gap-3 mb-3">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 bg-amber-300 rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-amber-400">
@@ -110,7 +110,7 @@
         <span id="streakCount" class="font-bold text-rose-600 text-base sm:text-lg">0</span>
       </div>
       
-      <!-- 구글 시트에서 내용을 수정했을 때 최신 내용으로 즉시 갱신하는 버튼 -->
+      <!-- 구글 시트에서 문장을 수정한 뒤 누르면 바로 최신 내용을 읽어오는 버튼 -->
       <button id="refreshSheetBtn" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3.5 py-2 rounded-2xl flex items-center gap-1" title="구글 시트 최신 문장 다시 가져오기">
         <span id="refreshIcon">🔄</span>
         <span class="hidden sm:inline font-bold">새로고침</span>
@@ -213,7 +213,7 @@
 
   <script>
     /* ==========================================================================
-       1. Web Audio API Sound Synthesizer (무설치 효과음)
+       1. Web Audio API Sound Synthesizer (자체 합성 효과음)
        ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -743,7 +743,6 @@
         speechBubbleEl.textContent = `구글 시트에서 ${questions.length}개의 문장을 가져왔어요! ✨`;
         loadQuestion(0);
       } else {
-        // 비상용 기본 문제로 대체
         questions = [...FALLBACK_QUESTIONS];
         dataSourceBadgeEl.textContent = "기본 샘플 모드";
         dataSourceBadgeEl.className = "text-[11px] text-slate-600 font-bold bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200";
