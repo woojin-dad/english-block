@@ -84,7 +84,7 @@
 </head>
 <body class="bg-gradient-to-b from-amber-100 via-indigo-50 to-sky-100 min-h-screen flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 selection:bg-yellow-200">
 
-  <!-- Header Section (코인, 연속정답, 새로고침만 깔끔하게 유지) -->
+  <!-- Header Section -->
   <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border-2 border-indigo-100 gap-3 mb-3">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 bg-amber-300 rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-amber-400">
@@ -110,7 +110,7 @@
         <span id="streakCount" class="font-bold text-rose-600 text-base sm:text-lg">0</span>
       </div>
       
-      <!-- 구글 시트에서 문장을 수정한 뒤 누르면 바로 최신 내용을 읽어오는 버튼 -->
+      <!-- 구글 시트 최신 문장 다시 가져오기 -->
       <button id="refreshSheetBtn" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3.5 py-2 rounded-2xl flex items-center gap-1" title="구글 시트 최신 문장 다시 가져오기">
         <span id="refreshIcon">🔄</span>
         <span class="hidden sm:inline font-bold">새로고침</span>
@@ -126,13 +126,8 @@
       <div class="flex justify-between items-center mb-2">
         <div class="flex items-center gap-2 text-sm">
           <span class="bg-indigo-100 text-indigo-800 font-black px-3 py-1 rounded-xl text-xs sm:text-sm" id="questionBadge">문제 1 / 1</span>
-          <span id="categoryBadge" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-xl font-sans font-bold">기본 연습</span>
           <span id="dataSourceBadge" class="text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">연결 중...</span>
         </div>
-        
-        <button id="hintToggleBtn" class="text-xs sm:text-sm bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1.5 rounded-xl border border-amber-300 flex items-center gap-1 transition">
-          <span>💡 힌트 보기</span>
-        </button>
       </div>
 
       <!-- Korean sentence prompt -->
@@ -140,10 +135,6 @@
         <span class="text-xs font-bold text-indigo-400 block mb-1">우리말 문장을 보고 영어 블록을 맞춰보세요!</span>
         <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-indigo-950 tracking-tight leading-snug">
           구글 시트에서 문장을 가져오는 중입니다... 🧩
-        </div>
-        
-        <div id="hintBox" class="hidden mt-3 p-2.5 sm:p-3 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 text-xs sm:text-sm inline-block max-w-xl transition-all">
-          <span class="font-bold">단어 힌트:</span> <span id="hintContent">-</span>
         </div>
       </div>
 
@@ -213,7 +204,7 @@
 
   <script>
     /* ==========================================================================
-       1. Web Audio API Sound Synthesizer (자체 합성 효과음)
+       1. Web Audio API Sound Synthesizer
        ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -243,7 +234,6 @@
       click() { playTone(580, 'triangle', 0.07); },
       drop() { playTone(440, 'sine', 0.09); },
       correct() {
-        // C major arpeggio (C5 -> E5 -> G5 -> C6)
         playTone(523.25, 'sine', 0.14, 0.0);
         playTone(659.25, 'sine', 0.14, 0.08);
         playTone(783.99, 'sine', 0.14, 0.16);
@@ -259,30 +249,26 @@
     };
 
     /* ==========================================================================
-       2. 구글 스프레드시트 URL 영구 내장
+       2. 구글 스프레드시트 URL 내장
        ========================================================================== */
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
 
-    // 네트워크 끊김 시 작동하는 비상용 기본 문제
+    // 연결 실패 시 대비용 기본 예시 문장
     const FALLBACK_QUESTIONS = [
       {
         korean: "나는 매일 아침 사과를 먹어요.",
         target: ["I", "eat", "an", "apple", "every", "morning", "."],
-        distractors: ["eats", "apples"],
-        hint: "I (나), eat (먹다), an apple (사과 하나), every morning (매일 아침)",
-        category: "일상 생활"
+        distractors: ["eats", "apples"]
       },
       {
         korean: "그 고양이는 침대 위에서 자고 있어요.",
         target: ["The", "cat", "is", "sleeping", "on", "the", "bed", "."],
-        distractors: ["sleep", "under"],
-        hint: "cat (고양이), sleeping (자고 있는), on the bed (침대 위에)",
-        category: "동물 친구들"
+        distractors: ["sleep", "under"]
       }
     ];
 
     /* ==========================================================================
-       3. 상태 변수 및 블록 팔레트
+       3. 상태 변수 및 색상 팔레트
        ========================================================================== */
     const BLOCK_PALETTES = [
       { bg: "bg-amber-100", text: "text-amber-950", border: "border-amber-300", hover: "hover:bg-amber-200" },
@@ -304,11 +290,7 @@
     const streakCountEl = document.getElementById('streakCount');
     const koreanSentenceEl = document.getElementById('koreanSentence');
     const questionBadgeEl = document.getElementById('questionBadge');
-    const categoryBadgeEl = document.getElementById('categoryBadge');
     const dataSourceBadgeEl = document.getElementById('dataSourceBadge');
-    const hintBoxEl = document.getElementById('hintBox');
-    const hintContentEl = document.getElementById('hintContent');
-    const hintToggleBtn = document.getElementById('hintToggleBtn');
     const assembledZoneEl = document.getElementById('assembledZone');
     const wordBankZoneEl = document.getElementById('wordBankZone');
     const emptySlotPlaceholderEl = document.getElementById('emptySlotPlaceholder');
@@ -325,7 +307,7 @@
     streakCountEl.textContent = currentStreak;
 
     /* ==========================================================================
-       4. 토크나이저 & CSV 파서
+       4. 토크나이저 & CSV 파서 (A, B, C열만 파싱)
        ========================================================================== */
     function tokenizeEnglishSentence(sentence) {
       if (!sentence) return [];
@@ -396,24 +378,20 @@
         const parsedRows = parseCSV(csvText);
         if (!parsedRows || parsedRows.length === 0) return [];
 
-        // 첫 번째 줄(헤더 제목) 건너뛰기
+        // 첫 번째 줄(헤더) 건너뛰기
         const dataRows = parsedRows.slice(1);
         const validQuestions = [];
 
         dataRows.forEach(row => {
-          const korean = row[0] || '';
-          const english = row[1] || '';
-          const distractors = row[2] || '';
-          const hint = row[3] || '';
-          const category = row[4] || '도전 영작';
+          const korean = row[0] || '';       // A열: 한글 문장
+          const english = row[1] || '';      // B열: 영어 정답 문장
+          const distractors = row[2] || '';  // C열: 방해 단어
 
           if (korean.trim() && english.trim()) {
             validQuestions.push({
               korean: korean.trim(),
               target: tokenizeEnglishSentence(english),
-              distractors: parseDistractors(distractors),
-              hint: hint.trim(),
-              category: category.trim()
+              distractors: parseDistractors(distractors)
             });
           }
         });
@@ -426,14 +404,14 @@
     }
 
     /* ==========================================================================
-       5. Web Speech API (TTS 발음 읽기)
+       5. Web Speech API (TTS)
        ========================================================================== */
     function speakSentence(text) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
-      utterance.rate = 0.88; // 또박또박 10세 어린이 맞춤 속도
+      utterance.rate = 0.88;
       utterance.pitch = 1.05;
 
       const voices = window.speechSynthesis.getVoices();
@@ -448,7 +426,7 @@
     }
 
     /* ==========================================================================
-       6. 게임 메커니즘 및 렌더링
+       6. 게임 렌더링 & 블록 조립
        ========================================================================== */
     function shuffle(arr) {
       const copy = [...arr];
@@ -487,16 +465,6 @@
       const q = questions[currentIndex];
       koreanSentenceEl.textContent = q.korean;
       questionBadgeEl.textContent = `문제 ${currentIndex + 1} / ${questions.length}`;
-      categoryBadgeEl.textContent = q.category || '영작 모험';
-
-      // Hint setup
-      hintBoxEl.classList.add('hidden');
-      if (q.hint && q.hint.trim().length > 0) {
-        hintToggleBtn.classList.remove('hidden');
-        hintContentEl.textContent = q.hint;
-      } else {
-        hintToggleBtn.classList.add('hidden');
-      }
 
       // Clear zones
       assembledZoneEl.innerHTML = '';
@@ -534,7 +502,7 @@
 
       block.innerHTML = `<span>${wordText}</span>`;
 
-      // Touch / Click to toggle between Bank and Assembled
+      // Touch / Click to toggle
       block.addEventListener('click', () => {
         sounds.click();
         if (block.parentElement === wordBankZoneEl) {
@@ -615,7 +583,7 @@
 
     /* ==========================================================================
        7. 정답 확인 및 보상
-       ========================================================================== */
+       ========================================================================= */
     checkBtn.addEventListener('click', () => {
       const q = questions[currentIndex];
       const userWords = getAssembledSentence();
@@ -685,11 +653,6 @@
       emptySlotPlaceholderEl.style.display = 'flex';
     });
 
-    hintToggleBtn.addEventListener('click', () => {
-      sounds.click();
-      hintBoxEl.classList.toggle('hidden');
-    });
-
     function triggerConfetti() {
       confetti({
         particleCount: 50,
@@ -720,13 +683,12 @@
       wordBankZoneEl.innerHTML = '';
       checkBtn.classList.add('hidden');
       nextBtn.classList.add('hidden');
-      hintToggleBtn.classList.add('hidden');
       mascotReactionEl.textContent = "👑";
       speechBubbleEl.textContent = "완벽해! 오늘 공부도 대성공이야!";
     }
 
     /* ==========================================================================
-       8. 자동 데이터 초기화 & 새로고침
+       8. 데이터 초기화
        ========================================================================== */
     async function loadDataAndInitialize() {
       refreshIcon.classList.add('animate-spin');
