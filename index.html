@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   
-  <!-- 💡 모든 기기 브라우저 캐시 강제 차단 메타태그 -->
+  <!-- 💡 브라우저 캐시 방지 메타태그 -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -72,6 +72,22 @@
       transform: scale(1.01);
     }
 
+    /* ⚡ 매칭게임 스타일 게이지 바 */
+    .gauge-bg {
+      width: 110px;
+      height: 18px;
+      background: #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #d1d5db;
+    }
+    #gaugeFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4ade80, #16a34a);
+      transition: width 0.4s ease-out;
+    }
+
     /* 오답 흔들림 */
     @keyframes shakeMotion {
       0%, 100% { transform: translateX(0); }
@@ -100,39 +116,35 @@
   <!-- 헤더 영역 -->
   <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border border-emerald-300 gap-3 mb-3">
     <div class="flex items-center gap-3">
-      <div class="w-11 h-11 bg-[#03c75a] rounded-2xl flex items-center justify-center text-2xl shadow-inner text-white font-black">
-        N
+      <!-- 🧩 블록 아이콘 -->
+      <div class="w-12 h-12 bg-amber-300 rounded-2xl flex items-center justify-center text-3xl shadow-inner border-2 border-amber-400">
+        🧩
       </div>
       <div>
-        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide flex items-center gap-1.5">
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide">
           블록 스피킹 원정대
-          <span class="text-xs bg-emerald-100 text-[#029f48] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-eng font-bold">Step</span>
         </h1>
         <p class="text-xs text-slate-500 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
       </div>
     </div>
 
-    <!-- 스코어 & 새로고침 -->
-    <div class="flex items-center gap-2 sm:gap-3 ml-auto">
-      <div class="flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-2xl" title="코인">
-        <span class="text-lg">🪙</span>
-        <span id="coinScore" class="font-bold text-amber-700 text-base sm:text-lg">0</span>
+    <!-- ⚡ 매칭게임 구글 시트 연동 게이지 & 🎁 선물 상자 -->
+    <div class="flex items-center gap-2 sm:gap-3 ml-auto bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-inner">
+      <span class="text-lg">⚡</span>
+      <div class="gauge-bg">
+        <div id="gaugeFill"></div>
       </div>
-      <div class="flex items-center gap-1 bg-rose-50 border border-rose-200 px-2.5 py-1.5 rounded-2xl" title="연속 정답">
-        <span class="text-lg">🔥</span>
-        <span id="streakCount" class="font-bold text-rose-600 text-base sm:text-lg">0</span>
+      <div class="font-black text-slate-800 text-base sm:text-lg flex items-center gap-1 ml-1" title="선물 상자">
+        <span>🎁</span>
+        <span id="giftCount" class="text-emerald-700">0</span>
       </div>
-      <button id="refreshBtn" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white text-sm px-3.5 py-2 rounded-2xl flex items-center gap-1 font-bold" title="시트 다시 가져오기">
-        <span id="refreshIcon">🔄</span>
-        <span class="hidden sm:inline">새로고침</span>
-      </button>
     </div>
   </header>
 
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 아이콘, 부가 문구 전부 삭제하고 오직 문제 제목만 정중앙에 깔끔하게 표시 -->
+    <!-- 1번 박스: 오직 문제 제목만 정중앙에 단독 배치 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex items-center justify-center min-h-[130px]">
       <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug">
         문장을 불러오는 중입니다... 🧩
@@ -253,13 +265,19 @@
       wrong() {
         playTone(320, 'sawtooth', 0.15, 0.0);
         playTone(220, 'sawtooth', 0.25, 0.12);
+      },
+      gift() {
+        [523, 659, 784, 1046, 1318].forEach((f, i) => playTone(f, 'triangle', 0.22, i * 0.1));
       }
     };
 
     /* ==========================================================================
-       2. 구글 스프레드시트 설정
+       2. 구글 스프레드시트 & 클라우드 실시간 연동 (매칭 게임과 완벽 공유)
        ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
+    
+    // 매칭 게임과 동일한 구글 앱스 스크립트 웹 앱 URL
+    const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
 
     const BACKUP_QUESTIONS = [
       {
@@ -285,15 +303,22 @@
 
     let questions = [];
     let curIndex = 0;
-    let coins = parseInt(localStorage.getItem('block_speaking_coins') || '0', 10);
-    let streak = 0;
+    
+    // 매칭 게임과 공유되는 클라우드 상태
+    let cloudState = {
+      coins: 0,
+      totalMatchedCount: 0, // 게이지 누적 칸수
+      giftCount: 0,         // 선물 개수
+      maxGauge: 500         // 매칭게임 기준 500칸 완주 시 선물 1개
+    };
+
     let stage = 1;
     let isRecording = false;
     let recognition = null;
 
     // DOM 노드
-    const coinScore = document.getElementById('coinScore');
-    const streakCount = document.getElementById('streakCount');
+    const gaugeFill = document.getElementById('gaugeFill');
+    const giftCount = document.getElementById('giftCount');
     const koreanSentence = document.getElementById('koreanSentence');
 
     const stage1Box = document.getElementById('stage1Box');
@@ -311,14 +336,59 @@
     const giveUpBtn = document.getElementById('giveUpBtn');
     const nextBtn = document.getElementById('nextBtn');
     const clearBtn = document.getElementById('clearBtn');
-    const refreshBtn = document.getElementById('refreshBtn');
-    const refreshIcon = document.getElementById('refreshIcon');
 
-    coinScore.textContent = coins.toLocaleString();
-    streakCount.textContent = streak;
+    // ☁️ 구글 시트에서 최신 게이지 & 선물 데이터 동기화
+    async function syncFromCloud() {
+      try {
+        const res = await fetch(CLOUD_SCRIPT_URL);
+        const data = await res.json();
+        if (data.coins !== undefined) {
+          cloudState.coins = Number(data.coins) || 0;
+          cloudState.giftCount = Number(data.gifts) || 0;
+          cloudState.totalMatchedCount = Number(data.matched) || 0;
+          cloudState.maxGauge = Number(data.maxGauge) || 500;
+          updateGaugeUI(false);
+        }
+      } catch (e) {
+        console.log("클라우드 게이지 로딩 실패: 로컬 데이터 유지");
+      }
+    }
+
+    // ☁️ 구글 시트로 변경된 게이지 & 선물 저장
+    async function syncToCloud() {
+      try {
+        if (cloudState.totalMatchedCount >= cloudState.maxGauge) {
+          cloudState.giftCount += 1;
+          cloudState.coins += 500;
+          cloudState.totalMatchedCount = 0;
+          sound.gift();
+          confetti({ particleCount: 250, spread: 85, origin: { y: 0.6 } });
+        }
+        await fetch(CLOUD_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            coins: cloudState.coins,
+            matched: cloudState.totalMatchedCount,
+            gifts: cloudState.giftCount
+          })
+        });
+      } catch (e) {}
+    }
+
+    function updateGaugeUI(sendToCloud = true) {
+      const progress = (cloudState.totalMatchedCount / cloudState.maxGauge) * 100;
+      gaugeFill.style.width = Math.min(progress, 100) + '%';
+      giftCount.textContent = cloudState.giftCount;
+      if (sendToCloud) syncToCloud();
+    }
+
+    function addGauge(points) {
+      cloudState.totalMatchedCount += points;
+      updateGaugeUI(true);
+    }
 
     /* ==========================================================================
-       3. Web Speech TTS
+       3. Web Speech TTS (소리 막힘 완벽 해결)
        ========================================================================== */
     let cachedVoices = [];
     function loadVoices() {
@@ -393,7 +463,7 @@
         handleSpokenResult(spoken);
       };
 
-      recognition.onerror = (e) => {
+      recognition.onerror = () => {
         stopSTT();
       };
 
@@ -432,11 +502,9 @@
       const targetClean = cleanTextForCheck(q.en);
 
       if (spokenClean === targetClean) {
-        onAnswerCorrect(15);
+        onAnswerCorrect(15); // 스피킹 단독 정답 시 게이지 15칸 상승!
       } else {
         sound.wrong();
-        streak = 0;
-        streakCount.textContent = streak;
       }
     }
 
@@ -588,7 +656,6 @@
       return el;
     }
 
-    // 드래그 앤 드롭
     [assembledSlots, wordPool].forEach(zone => {
       zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
       zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
@@ -619,18 +686,13 @@
     });
 
     /* ==========================================================================
-       7. 정답 판정 및 보상
+       7. 정답 판정 및 구글 시트 연동 게이지 보상
        ========================================================================== */
-    function onAnswerCorrect(gainCoin) {
+    function onAnswerCorrect(gaugePoints) {
       sound.success();
-      confetti({ particleCount: 60, spread: 65, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
 
-      coins += gainCoin;
-      streak += 1;
-      coinScore.textContent = coins.toLocaleString();
-      streakCount.textContent = streak;
-      localStorage.setItem('block_speaking_coins', coins);
-
+      addGauge(gaugePoints);
       speakText(questions[curIndex].en);
 
       stage1Box.style.display = "none";
@@ -652,13 +714,11 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(10);
+        onAnswerCorrect(10); // 블록 힌트 정답 시 게이지 10칸 상승!
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
         setTimeout(() => assembledSlots.classList.remove('animate-shake'), 400);
-        streak = 0;
-        streakCount.textContent = streak;
       }
     });
 
@@ -668,7 +728,7 @@
     });
 
     function finishGameCelebration() {
-      sound.success();
+      sound.gift();
       confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
 
       koreanSentence.textContent = "🎉 모든 미션을 완료했어요!";
@@ -677,7 +737,7 @@
       assembledSlots.innerHTML = `
         <div class="w-full py-8 text-center">
           <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 스피킹 탐험가! 🏆</p>
-          <p class="text-slate-500 mb-4 font-sans">누적 획득 코인: ${coins.toLocaleString()}개 🪙</p>
+          <p class="text-slate-500 mb-4 font-sans">누적 선물: ${cloudState.giftCount}개 🎁</p>
           <button onclick="loadQuestion(0)" class="toy-btn bg-[#03c75a] text-white font-bold text-lg px-8 py-3 rounded-2xl">
             처음부터 다시 도전하기 🚀
           </button>
@@ -691,7 +751,7 @@
     }
 
     /* ==========================================================================
-       8. CSV 파서 & 시트 자동 연동
+       8. CSV 파서 & 시트 자동 연동 (Date.now 실시간 호출)
        ========================================================================== */
     function parseCSV(text) {
       const rows = [];
@@ -725,11 +785,13 @@
     }
 
     async function loadDataFromSheet() {
-      refreshIcon.classList.add('animate-spin');
+      // 1. 구글 시트에서 클라우드 선물/게이지 먼저 로딩
+      await syncFromCloud();
 
+      // 2. 구글 시트에서 문제 데이터 로딩
       try {
         const separator = SHEET_CSV_URL.includes('?') ? '&' : '?';
-        const res = await fetch(`${SHEET_CSV_URL}${separator}t=${Date.now()}`);
+        const res = await fetch(`${SHEET_CSV_URL}${separator}cb=${Date.now()}`);
         if (!res.ok) throw new Error("네트워크 오류");
         const csv = await res.text();
         const parsed = parseCSV(csv);
@@ -752,7 +814,6 @@
           }
         });
 
-        refreshIcon.classList.remove('animate-spin');
         if (list.length > 0) {
           questions = list;
           loadQuestion(0);
@@ -762,7 +823,6 @@
         console.warn("시트 가져오기 실패, 기본 문장 사용:", e);
       }
 
-      refreshIcon.classList.remove('animate-spin');
       questions = BACKUP_QUESTIONS.map(q => ({
         kr: q.kr,
         en: q.en,
@@ -771,11 +831,6 @@
       }));
       loadQuestion(0);
     }
-
-    refreshBtn.addEventListener('click', () => {
-      sound.pop();
-      loadDataFromSheet();
-    });
 
     window.addEventListener('DOMContentLoaded', () => {
       initSTT();
