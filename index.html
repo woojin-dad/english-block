@@ -171,7 +171,7 @@
       </button>
     </div>
 
-    <!-- 2단계: 블록 조립 영역 (인라인 스타일로 확실히 숨김 처리) -->
+    <!-- 2단계: 블록 조립 영역 (처음에는 숨김) -->
     <div id="blockAssemblyContainer" style="display: none;" class="flex flex-col gap-3.5">
       <!-- Assembled Sentence Box -->
       <div class="bg-white/90 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-indigo-100">
@@ -212,23 +212,23 @@
 
     <!-- Action Bar -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
-      <!-- 2단계에서 블록을 보고 다시 말해보고 싶을 때 (초기 숨김) -->
+      <!-- 2단계에서 블록을 보고 다시 말해보고 싶을 때 -->
       <button id="secondaryMicBtn" style="display: none;" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm sm:text-base px-4 sm:px-5 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span class="text-lg">🎤</span>
         <span>다시 말하기</span>
       </button>
 
-      <!-- 2단계 블록 확인 버튼 (초기 숨김) -->
+      <!-- 2단계 블록 확인 버튼 -->
       <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
       </button>
 
-      <!-- 3단계: 도저히 모를 때 정답 보기 버튼 (초기 숨김) -->
+      <!-- 3단계: 도저히 모를 때 정답 보기 버튼 -->
       <button id="giveUpBtn" style="display: none;" class="toy-btn bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-sm sm:text-base px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>💡 정답 보기</span>
       </button>
 
-      <!-- 다음 문제 버튼 (초기 숨김) -->
+      <!-- 다음 문제 버튼 -->
       <button id="nextBtn" style="display: none;" class="toy-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base sm:text-lg px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
         <span>다음 문제 ➡️</span>
       </button>
@@ -237,7 +237,7 @@
 
   <script>
     /* ==========================================================================
-       1. Web Audio API Sound Synthesizer
+       1. Web Audio API Sound Synthesizer (게임 효과음)
        ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -322,6 +322,7 @@
     let currentStage = 1; // 1: 스피킹, 2: 블록 힌트, 3: 정답 확인
     let isRecording = false;
     let recognition = null;
+    let currentAudioPlayer = null;
 
     // DOM References
     const coinScoreEl = document.getElementById('coinScore');
@@ -450,20 +451,47 @@
     }
 
     /* ==========================================================================
-       5. Web Speech API (TTS & 음성 인식 STT)
+       5. 🎙️ 구글 gTTS(스피킹 마스터와 동일한 원어민 음성) & STT 음성 인식
        ========================================================================== */
     function speakSentence(text, callback) {
+      if (!text || text.trim() === '') return;
+
+      // 이전 재생 중단
+      if (currentAudioPlayer) {
+        currentAudioPlayer.pause();
+        currentAudioPlayer = null;
+      }
+
+      // 파이썬 gTTS와 동일한 구글 공식 번역 TTS 오디오 스트림 주소
+      const encodedText = encodeURIComponent(text);
+      const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=en&client=tw-ob`;
+
+      const audio = new Audio(googleTTSUrl);
+      currentAudioPlayer = audio;
+
+      audio.onended = () => {
+        currentAudioPlayer = null;
+        if (callback) callback();
+      };
+
+      audio.onerror = () => {
+        console.warn("구글 오디오 로딩 실패, 브라우저 음성으로 대체합니다.");
+        fallbackBrowserTTS(text, callback);
+      };
+
+      audio.play().catch(e => {
+        console.warn("오디오 재생 제한, 브라우저 음성으로 대체합니다:", e);
+        fallbackBrowserTTS(text, callback);
+      });
+    }
+
+    // 오프라인 / 네트워크 지연 시 백업용 브라우저 TTS
+    function fallbackBrowserTTS(text, callback) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = 0.88;
-      utterance.pitch = 1.05;
-
-      const voices = window.speechSynthesis.getVoices();
-      const childFriendlyVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Natural') || v.name.includes('Google US')));
-      if (childFriendlyVoice) utterance.voice = childFriendlyVoice;
-
       if (callback) utterance.onend = callback;
       window.speechSynthesis.speak(utterance);
     }
@@ -508,7 +536,7 @@
         if (event.error === 'not-allowed') {
           speechBubbleEl.textContent = "마이크 권한을 허용해줘야 말할 수 있어요! 🎤";
         } else if (event.error === 'no-speech') {
-          speechBubbleEl.textContent = "소리가 들리지 않았어요. 다시 마이크를 눌러볼까요?";
+          speechBubbleEl.textContent = "목소리가 들리지 않았어요. 다시 마이크를 눌러볼까요?";
         } else {
           speechBubbleEl.textContent = "다시 한 번 큰 소리로 말해볼까요?";
         }
@@ -577,7 +605,7 @@
         stageBadgeEl.textContent = "1단계: 입으로 말하기 🎤";
         stageBadgeEl.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-rose-100 text-rose-700 border border-rose-200";
         speakingChallengeZone.style.display = "flex";
-        blockAssemblyContainer.style.display = "none"; // 확실한 숨김
+        blockAssemblyContainer.style.display = "none";
         secondaryMicBtn.style.display = "none";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
@@ -586,10 +614,10 @@
         stageBadgeEl.textContent = "2단계: 블록 조립 힌트 🧩";
         stageBadgeEl.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-amber-100 text-amber-800 border border-amber-300";
         speakingChallengeZone.style.display = "none";
-        blockAssemblyContainer.style.display = "flex"; // 확실한 노출
+        blockAssemblyContainer.style.display = "flex";
         secondaryMicBtn.style.display = "inline-flex";
         checkBlockBtn.style.display = "inline-flex";
-        giveUpBtn.style.display = "inline-flex"; // 3단계 버튼 활성화
+        giveUpBtn.style.display = "inline-flex";
         mascotReactionEl.textContent = "🐱";
         speechBubbleEl.textContent = "블록을 순서대로 골라 문장을 완성해봐! (모르면 정답 보기를 눌러봐)";
       } else if (stage === 3) {
@@ -675,13 +703,11 @@
       koreanSentenceEl.textContent = q.korean;
       questionBadgeEl.textContent = `문제 ${currentIndex + 1} / ${questions.length}`;
 
-      // Reset Zones
       assembledZoneEl.innerHTML = '';
       assembledZoneEl.appendChild(emptySlotPlaceholderEl);
       emptySlotPlaceholderEl.style.display = 'flex';
       wordBankZoneEl.innerHTML = '';
 
-      // Prepare blocks for Stage 2
       const allWords = [...q.target];
       if (q.distractors && q.distractors.length > 0) {
         allWords.push(...q.distractors);
@@ -693,7 +719,7 @@
         wordBankZoneEl.appendChild(block);
       });
 
-      // 🔥 처음 시작할 때는 무조건 1단계 스피킹 단독 모드로 블록을 완전히 숨김!
+      // 1단계 스피킹 단독 모드로 시작
       setStage(1);
       mascotReactionEl.textContent = "🐱";
       speechBubbleEl.textContent = "마이크 버튼을 누르고 영어로 말해봐!";
