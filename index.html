@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
-  <title>블록 스피킹 🎤</title>
+  <title>스마트 영어 스피킹 원정대 🎤</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Canvas Confetti -->
@@ -171,7 +171,7 @@
       </button>
     </div>
 
-    <!-- 2단계: 블록 조립 영역 (처음에는 숨김) -->
+    <!-- 2단계: 블록 조립 영역 (처음에는 완벽 숨김) -->
     <div id="blockAssemblyContainer" style="display: none;" class="flex flex-col gap-3.5">
       <!-- Assembled Sentence Box -->
       <div class="bg-white/90 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-indigo-100">
@@ -319,10 +319,9 @@
     let currentIndex = 0;
     let coins = parseInt(localStorage.getItem('block_english_coins') || '0', 10);
     let currentStreak = 0;
-    let currentStage = 1; // 1: 스피킹, 2: 블록 힌트, 3: 정답 확인
+    let currentStage = 1;
     let isRecording = false;
     let recognition = null;
-    let currentAudioPlayer = null;
 
     // DOM References
     const coinScoreEl = document.getElementById('coinScore');
@@ -451,49 +450,58 @@
     }
 
     /* ==========================================================================
-       5. 🎙️ 구글 gTTS(스피킹 마스터와 동일한 원어민 음성) & STT 음성 인식
+       5. 🔊 완벽하게 동작하는 안정적 고품질 TTS & 음성 인식
        ========================================================================== */
-    function speakSentence(text, callback) {
-      if (!text || text.trim() === '') return;
+    let cachedVoices = [];
 
-      // 이전 재생 중단
-      if (currentAudioPlayer) {
-        currentAudioPlayer.pause();
-        currentAudioPlayer = null;
+    function populateVoices() {
+      if ('speechSynthesis' in window) {
+        cachedVoices = window.speechSynthesis.getVoices();
       }
-
-      // 파이썬 gTTS와 동일한 구글 공식 번역 TTS 오디오 스트림 주소
-      const encodedText = encodeURIComponent(text);
-      const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=en&client=tw-ob`;
-
-      const audio = new Audio(googleTTSUrl);
-      currentAudioPlayer = audio;
-
-      audio.onended = () => {
-        currentAudioPlayer = null;
-        if (callback) callback();
-      };
-
-      audio.onerror = () => {
-        console.warn("구글 오디오 로딩 실패, 브라우저 음성으로 대체합니다.");
-        fallbackBrowserTTS(text, callback);
-      };
-
-      audio.play().catch(e => {
-        console.warn("오디오 재생 제한, 브라우저 음성으로 대체합니다:", e);
-        fallbackBrowserTTS(text, callback);
-      });
     }
 
-    // 오프라인 / 네트워크 지연 시 백업용 브라우저 TTS
-    function fallbackBrowserTTS(text, callback) {
-      if (!('speechSynthesis' in window)) return;
+    if ('speechSynthesis' in window) {
+      populateVoices();
+      window.speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
+    // 100% 끊김 없는 확실한 원어민 발음 재생 함수
+    function speakSentence(text, callback) {
+      if (!('speechSynthesis' in window) || !text) return;
+
+      // 브라우저 음성 큐 강제 리셋 (먹통 방지)
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.88;
-      if (callback) utterance.onend = callback;
-      window.speechSynthesis.speak(utterance);
+
+      setTimeout(() => {
+        try {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'en-US';
+          utterance.rate = 0.88; // 10세 어린이 맞춤 정갈한 속도
+          utterance.pitch = 1.05;
+
+          if (cachedVoices.length === 0) {
+            cachedVoices = window.speechSynthesis.getVoices();
+          }
+
+          // 1순위: Google US English (스피킹 마스터의 gTTS와 같은 구글 공식 음색)
+          // 2순위: Natural / Samantha 등 부드러운 고품질 영문 음성
+          const preferredVoice = cachedVoices.find(v => v.lang.startsWith('en') && v.name.includes('Google US')) ||
+                                 cachedVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Jenny') || v.name.includes('Ava'))) ||
+                                 cachedVoices.find(v => v.lang.startsWith('en'));
+
+          if (preferredVoice) {
+            utterance.voice = preferredVoice;
+          }
+
+          if (callback) {
+            utterance.onend = callback;
+          }
+
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {
+          console.error("TTS 재생 에러:", e);
+        }
+      }, 50);
     }
 
     function normalizeForComparison(str) {
@@ -601,7 +609,7 @@
     function setStage(stage) {
       currentStage = stage;
       if (stage === 1) {
-        // 1단계: 스피킹 단독 모드 (블록 100% 숨김)
+        // 1단계: 스피킹 단독 모드
         stageBadgeEl.textContent = "1단계: 입으로 말하기 🎤";
         stageBadgeEl.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-rose-100 text-rose-700 border border-rose-200";
         speakingChallengeZone.style.display = "flex";
@@ -610,7 +618,7 @@
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
       } else if (stage === 2) {
-        // 2단계: 블록 힌트 조립 모드 (블록 등장)
+        // 2단계: 블록 힌트 조립 모드
         stageBadgeEl.textContent = "2단계: 블록 조립 힌트 🧩";
         stageBadgeEl.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-amber-100 text-amber-800 border border-amber-300";
         speakingChallengeZone.style.display = "none";
@@ -658,7 +666,8 @@
       mascotReactionEl.textContent = "💡";
       speechBubbleEl.textContent = "정답 문장이야! 원어민 소리를 듣고 큰 소리로 따라 해봐!";
 
-      const fullSpeech = formatForSpeech(q.target);
+      // 문장을 또박또박 읽어줌
+      const fullSpeech = q.rawEnglish || formatForSpeech(q.target);
       speakSentence(fullSpeech);
 
       nextBtn.style.display = "inline-flex";
@@ -833,10 +842,9 @@
       localStorage.setItem('block_english_coins', coins);
 
       const q = questions[currentIndex];
-      const fullSpeech = formatForSpeech(q.target);
+      const fullSpeech = q.rawEnglish || formatForSpeech(q.target);
       speakSentence(fullSpeech);
 
-      // UI 제어
       checkBlockBtn.style.display = "none";
       giveUpBtn.style.display = "none";
       speakingChallengeZone.style.display = "none";
