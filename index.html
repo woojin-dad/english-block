@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  
+  <!-- 💡 모든 기기 브라우저 캐시 강제 차단 메타태그 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
   <title>블록 스피킹 원정대 🧩🎤</title>
   
   <!-- Tailwind CSS & Confetti -->
@@ -11,11 +17,11 @@
   
   <!-- 폰트 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Jua&display=swap" rel="stylesheet">
   
   <style>
-    /* 🌿 눈이 편안하고 깊이 있는 차분한 포레스트 그린 배경 (파스텔톤 배제) */
+    /* 🌿 차분하고 눈이 편안한 포레스트 그린 배경 (파스텔톤 배제) */
     body {
       font-family: 'Jua', 'Fredoka', cursive, sans-serif;
       user-select: none;
@@ -126,7 +132,7 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 제목(우리말 문장) 빼고 배지, 아이콘, 부가 문구 전부 삭제 -->
+    <!-- 1번 박스: 제목(우리말 문장)만 중앙에 정돈 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-900/10 text-center flex items-center justify-center min-h-[130px]">
       <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug">
         문장을 불러오는 중입니다... 🧩
