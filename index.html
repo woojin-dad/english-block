@@ -15,12 +15,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Jua&display=swap" rel="stylesheet">
   
   <style>
+    /* 🌿 네이버 공식 색상 체계 적용 */
     :root {
       --naver-green: #03c75a;
-      --naver-dark-green: #029f48;
-      --naver-bg-top: #d8f5e5;
-      --naver-bg-mid: #eefbf4;
-      --naver-bg-bottom: #d2f1e1;
+      --naver-green-hover: #02b350;
+      --naver-bg: #f4f6f8;
+      --naver-border: #e4e8eb;
     }
 
     body {
@@ -28,7 +28,7 @@
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
-      background: linear-gradient(180deg, var(--naver-bg-top) 0%, var(--naver-bg-mid) 50%, var(--naver-bg-bottom) 100%) !important;
+      background-color: var(--naver-bg) !important;
       min-height: 100vh;
     }
 
@@ -39,17 +39,17 @@
     /* 3D 완구 버튼 효과 */
     .toy-btn {
       transition: all 0.1s ease-in-out;
-      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
     }
     .toy-btn:active {
-      transform: translateY(3px);
-      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
     }
 
     /* 단어 블록 스타일 */
     .word-block {
       transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
-      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08);
       cursor: pointer;
     }
     .word-block:hover {
@@ -57,19 +57,19 @@
     }
     .word-block:active {
       transform: translateY(2px) scale(0.97);
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
     }
 
     /* 조립 슬롯 구역 */
     .slot-zone {
       min-height: 90px;
-      border: 3px dashed #86efac;
+      border: 3px dashed #bbf7d0;
       border-radius: 1.5rem;
-      background: rgba(255, 255, 255, 0.7);
+      background: #f8fafc;
     }
     .slot-zone.drag-over {
       border-color: var(--naver-green);
-      background-color: #dcfce7;
+      background-color: #ecfdf5;
       transform: scale(1.01);
     }
 
@@ -98,32 +98,32 @@
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6">
 
-  <!-- 헤더 영역 (네이버 그린 아이콘, 코인, 스트릭, 새로고침) -->
-  <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border-2 border-emerald-200 gap-3 mb-3">
+  <!-- 헤더 영역 (네이버 그린 메인 바) -->
+  <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white px-4 py-3 sm:px-6 rounded-3xl shadow-sm border border-slate-200 gap-3 mb-3">
     <div class="flex items-center gap-3">
-      <div class="w-12 h-12 bg-[#03c75a] rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-emerald-600 text-white">
-        🦁
+      <div class="w-11 h-11 bg-[#03c75a] rounded-2xl flex items-center justify-center text-2xl shadow-inner text-white font-black">
+        N
       </div>
       <div>
-        <h1 class="text-xl sm:text-2xl font-black text-emerald-950 tracking-wide flex items-center gap-1.5">
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide flex items-center gap-1.5">
           블록 스피킹 원정대
-          <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-eng font-bold">Step</span>
+          <span class="text-xs bg-[#e8f8ee] text-[#03c75a] px-2 py-0.5 rounded-full uppercase tracking-wider font-eng font-bold">Kids</span>
         </h1>
-        <p class="text-xs text-emerald-700 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
+        <p class="text-xs text-slate-500 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
       </div>
     </div>
 
     <!-- 스코어 & 리프레시 -->
     <div class="flex items-center gap-2 sm:gap-3 ml-auto">
-      <div class="flex items-center gap-1 bg-amber-50 border-2 border-amber-300 px-3 py-1.5 rounded-2xl" title="코인">
+      <div class="flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-2xl" title="코인">
         <span class="text-lg">🪙</span>
         <span id="coinScore" class="font-bold text-amber-700 text-base sm:text-lg">0</span>
       </div>
-      <div class="flex items-center gap-1 bg-rose-50 border-2 border-rose-300 px-2.5 py-1.5 rounded-2xl" title="연속 정답">
+      <div class="flex items-center gap-1 bg-rose-50 border border-rose-200 px-2.5 py-1.5 rounded-2xl" title="연속 정답">
         <span class="text-lg">🔥</span>
         <span id="streakCount" class="font-bold text-rose-600 text-base sm:text-lg">0</span>
       </div>
-      <button id="refreshBtn" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white text-sm px-3.5 py-2 rounded-2xl flex items-center gap-1 font-bold" title="시트 다시 가져오기">
+      <button id="refreshBtn" class="toy-btn bg-[#03c75a] hover:bg-[#02b350] text-white text-sm px-3.5 py-2 rounded-2xl flex items-center gap-1 font-bold" title="시트 다시 가져오기">
         <span id="refreshIcon">🔄</span>
         <span class="hidden sm:inline">새로고침</span>
       </button>
@@ -133,58 +133,34 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 질문 카드 -->
-    <div class="bg-white rounded-3xl p-5 sm:p-7 shadow-xl border-4 border-emerald-100/90 relative overflow-hidden">
-      <div class="flex justify-between items-center mb-2">
-        <div class="flex items-center gap-2 text-sm">
-          <span id="questionBadge" class="bg-emerald-100 text-emerald-800 font-black px-3 py-1 rounded-xl text-xs sm:text-sm">문제 1 / 1</span>
-          <span id="stageBadge" class="text-xs font-bold px-2.5 py-1 rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
-            1단계: 입으로 말하기 🎤
-          </span>
-          <span id="statusBadge" class="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">연결 중...</span>
-        </div>
-      </div>
-
-      <!-- 우리말 문장 안내 -->
-      <div class="text-center py-3 sm:py-5">
-        <span class="text-xs font-bold text-emerald-600 block mb-1.5">우리말 문장을 보고 영어로 크게 말해보세요!</span>
-        <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-800 tracking-tight leading-snug">
-          문장을 불러오는 중입니다... 🧩
-        </div>
-      </div>
-
-      <!-- 마스코트 & 피드백 말풍선 -->
-      <div class="flex justify-center items-center mt-1">
-        <div id="mascotIcon" class="text-3xl sm:text-4xl transition-all duration-300">
-          🐱
-        </div>
-        <div id="mascotBubble" class="ml-2.5 text-xs sm:text-sm bg-emerald-50 text-emerald-950 border border-emerald-200 px-3.5 py-1.5 rounded-2xl font-bold max-w-xs sm:max-w-md">
-          마이크 버튼을 누르고 영어로 말해봐!
-        </div>
+    <!-- 1번 박스: 배지, 마스코트, 말풍선 전부 없애고 문장 제목만 깔끔하게 표시 -->
+    <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200 text-center flex flex-col items-center justify-center min-h-[140px]">
+      <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug">
+        문장을 불러오는 중입니다... 🧩
       </div>
     </div>
 
-    <!-- 1단계: 스피킹 단독 도전 화면 (초기 노출) -->
-    <div id="stage1Box" class="bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-10 shadow-xl border-2 border-emerald-200 flex flex-col items-center justify-center text-center gap-4">
-      <p class="text-base sm:text-lg font-black text-emerald-950">
+    <!-- 2번 박스 (1단계): 스피킹 단독 도전 화면 (초기 노출) -->
+    <div id="stage1Box" class="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center gap-4">
+      <p class="text-base sm:text-lg font-black text-slate-800">
         머릿속으로 영어가 떠올랐나요?
       </p>
 
-      <button id="mainMicBtn" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-black text-lg sm:text-xl px-10 sm:px-14 py-4 rounded-3xl flex items-center gap-3 shadow-lg transition-all scale-105">
+      <button id="mainMicBtn" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-black text-lg sm:text-xl px-10 sm:px-14 py-4 rounded-3xl flex items-center gap-3 shadow-md transition-all scale-105">
         <span id="mainMicIcon" class="text-3xl">🎤</span>
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
       <!-- 2단계 진입 버튼 -->
-      <button id="openBlockBtn" class="mt-3 text-sm text-emerald-900 hover:text-emerald-950 bg-emerald-100 hover:bg-emerald-200 px-5 py-2.5 rounded-2xl border-2 border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
+      <button id="openBlockBtn" class="mt-3 text-sm text-[#029f48] hover:text-[#02833b] bg-[#e8f8ee] hover:bg-[#d8f3e2] px-5 py-2.5 rounded-2xl border border-[#bbf7d0] font-black transition flex items-center gap-1.5 shadow-sm">
         <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
     </div>
 
-    <!-- 2단계: 블록 조립 컨테이너 (초기 숨김) -->
+    <!-- 3번 박스 (2단계): 블록 조립 컨테이너 (초기 숨김) -->
     <div id="stage2Box" style="display: none;" class="flex flex-col gap-3.5">
       <!-- 내가 만든 문장 박스 -->
-      <div class="bg-white/90 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-emerald-200">
+      <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
             <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
@@ -206,12 +182,12 @@
       </div>
 
       <!-- 단어 보관함 -->
-      <div class="bg-white/95 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-xl border-2 border-emerald-200">
+      <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-2.5">
           <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
             <span>📦</span> 단어 블록 보관함
           </span>
-          <span class="text-xs text-emerald-700 font-bold">블록 힌트가 열렸어요!</span>
+          <span class="text-xs text-[#03c75a] font-bold">블록 힌트가 열렸어요!</span>
         </div>
         <div id="wordPool" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 min-h-[90px] p-3 bg-slate-50 rounded-2xl border border-slate-200">
           <!-- 블록 동적 렌더링 -->
@@ -228,17 +204,17 @@
       </button>
 
       <!-- 2단계 블록 검사 -->
-      <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
+      <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#02b350] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
       </button>
 
-      <!-- 3단계 정답 보기 (포기) -->
+      <!-- 3단계 정답 보기 -->
       <button id="giveUpBtn" style="display: none;" class="toy-btn bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-sm sm:text-base px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>💡 정답 보기</span>
       </button>
 
       <!-- 다음 문제 이동 -->
-      <button id="nextBtn" style="display: none;" class="toy-btn bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base sm:text-lg px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
+      <button id="nextBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#02b350] text-white font-bold text-base sm:text-lg px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
         <span>다음 문제 ➡️</span>
       </button>
     </div>
@@ -246,7 +222,7 @@
 
   <script>
     /* ==========================================================================
-       1. 효과음 합성기 (무설치 Web Audio API)
+       1. 효과음 합성기 (Web Audio API)
        ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -286,7 +262,7 @@
     };
 
     /* ==========================================================================
-       2. 구글 스프레드시트 설정 및 데이터
+       2. 구글 스프레드시트 설정
        ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
 
@@ -316,19 +292,14 @@
     let curIndex = 0;
     let coins = parseInt(localStorage.getItem('block_speaking_coins') || '0', 10);
     let streak = 0;
-    let stage = 1; // 1: 말하기, 2: 블록 힌트, 3: 정답 확인
+    let stage = 1;
     let isRecording = false;
     let recognition = null;
 
     // DOM 노드
     const coinScore = document.getElementById('coinScore');
     const streakCount = document.getElementById('streakCount');
-    const questionBadge = document.getElementById('questionBadge');
-    const stageBadge = document.getElementById('stageBadge');
-    const statusBadge = document.getElementById('statusBadge');
     const koreanSentence = document.getElementById('koreanSentence');
-    const mascotIcon = document.getElementById('mascotIcon');
-    const mascotBubble = document.getElementById('mascotBubble');
 
     const stage1Box = document.getElementById('stage1Box');
     const stage2Box = document.getElementById('stage2Box');
@@ -352,7 +323,7 @@
     streakCount.textContent = streak;
 
     /* ==========================================================================
-       3. 완벽한 Web Speech TTS (소리 안 남 버그 100% 방어)
+       3. Web Speech TTS
        ========================================================================== */
     let cachedVoices = [];
     function loadVoices() {
@@ -368,7 +339,6 @@
     function speakText(text) {
       if (!('speechSynthesis' in window) || !text) return;
 
-      // 브라우저 큐 취소 & 일시정지 상태 강제 해제
       window.speechSynthesis.cancel();
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
@@ -421,8 +391,6 @@
         mainMicIcon.textContent = "🛑";
         mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
         subMicBtn.classList.add('mic-active');
-        mascotIcon.textContent = "👂";
-        mascotBubble.textContent = "영어로 또박또박 말해줘! 잘 듣고 있어...";
       };
 
       recognition.onresult = (e) => {
@@ -432,12 +400,6 @@
 
       recognition.onerror = (e) => {
         stopSTT();
-        mascotIcon.textContent = "🐣";
-        if (e.error === 'not-allowed') {
-          mascotBubble.textContent = "마이크 권한을 허용해줘야 말할 수 있어요! 🎤";
-        } else {
-          mascotBubble.textContent = "소리가 잘 안 들렸어요. 다시 마이크를 눌러볼까요?";
-        }
       };
 
       recognition.onend = () => {
@@ -475,42 +437,32 @@
       const targetClean = cleanTextForCheck(q.en);
 
       if (spokenClean === targetClean) {
-        onAnswerCorrect(15, `🎉 발음 최고! 한 번에 스피킹 성공! "${spoken}" 🌟`);
+        onAnswerCorrect(15);
       } else {
         sound.wrong();
         streak = 0;
         streakCount.textContent = streak;
-        mascotIcon.textContent = "🐣";
-        mascotBubble.innerHTML = `들린 말: <span class="text-rose-600 font-bold">"${spoken}"</span><br>다시 말해보거나, 아래 🧩 단어 블록을 열어볼까?`;
       }
     }
 
     /* ==========================================================================
-       5. 단계(Step) 컨트롤
+       5. 단계 컨트롤
        ========================================================================== */
     function setGameStage(newStage) {
       stage = newStage;
       if (stage === 1) {
-        stageBadge.textContent = "1단계: 입으로 말하기 🎤";
-        stageBadge.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-rose-100 text-rose-700 border border-rose-200";
         stage1Box.style.display = "flex";
         stage2Box.style.display = "none";
         subMicBtn.style.display = "none";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
       } else if (stage === 2) {
-        stageBadge.textContent = "2단계: 블록 조립 힌트 🧩";
-        stageBadge.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300";
         stage1Box.style.display = "none";
         stage2Box.style.display = "flex";
         subMicBtn.style.display = "inline-flex";
         checkBlockBtn.style.display = "inline-flex";
         giveUpBtn.style.display = "inline-flex";
-        mascotIcon.textContent = "🐱";
-        mascotBubble.textContent = "블록을 순서대로 골라 문장을 완성해봐! (모르면 정답 보기)";
       } else if (stage === 3) {
-        stageBadge.textContent = "3단계: 정답 확인 및 읽기 💡";
-        stageBadge.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-purple-100 text-purple-800 border border-purple-300";
         stage1Box.style.display = "none";
         stage2Box.style.display = "flex";
         checkBlockBtn.style.display = "none";
@@ -539,9 +491,6 @@
         const blk = makeBlockElement(word, idx);
         assembledSlots.appendChild(blk);
       });
-
-      mascotIcon.textContent = "💡";
-      mascotBubble.textContent = "정답 문장이야! 원어민 소리를 듣고 큰 소리로 따라 해봐!";
 
       speakText(q.en);
       nextBtn.style.display = "inline-flex";
@@ -587,7 +536,6 @@
 
       const q = questions[curIndex];
       koreanSentence.textContent = q.kr;
-      questionBadge.textContent = `문제 ${curIndex + 1} / ${questions.length}`;
 
       assembledSlots.innerHTML = '';
       assembledSlots.appendChild(emptyGuideText);
@@ -603,8 +551,6 @@
       });
 
       setGameStage(1);
-      mascotIcon.textContent = "🐱";
-      mascotBubble.textContent = "마이크 버튼을 누르고 영어로 말해봐!";
     }
 
     function makeBlockElement(word, id) {
@@ -680,12 +626,9 @@
     /* ==========================================================================
        7. 정답 판정 및 보상
        ========================================================================== */
-    function onAnswerCorrect(gainCoin, textMsg) {
+    function onAnswerCorrect(gainCoin) {
       sound.success();
       confetti({ particleCount: 60, spread: 65, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
-
-      mascotIcon.textContent = "🥳";
-      mascotBubble.textContent = textMsg;
 
       coins += gainCoin;
       streak += 1;
@@ -707,8 +650,6 @@
       const placed = Array.from(assembledSlots.querySelectorAll('.word-block')).map(b => b.getAttribute('data-word'));
 
       if (placed.length === 0) {
-        mascotIcon.textContent = "🤔";
-        mascotBubble.textContent = "먼저 단어 블록을 조립해줘!";
         playTone(300, 'sine', 0.1);
         return;
       }
@@ -716,15 +657,13 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(10, "블록 힌트 정답이야! 참 잘했어! 🌟");
+        onAnswerCorrect(10);
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
         setTimeout(() => assembledSlots.classList.remove('animate-shake'), 400);
         streak = 0;
         streakCount.textContent = streak;
-        mascotIcon.textContent = "🐣";
-        mascotBubble.textContent = "순서가 조금 아쉬워요! 다시 해볼까? (모르면 '정답 보기')";
       }
     });
 
@@ -737,12 +676,12 @@
       sound.success();
       confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
 
-      koreanSentence.textContent = "🎉 축하합니다! 모든 미션을 완료했어요!";
+      koreanSentence.textContent = "🎉 모든 미션을 완료했어요!";
       stage1Box.style.display = "none";
       stage2Box.style.display = "flex";
       assembledSlots.innerHTML = `
         <div class="w-full py-8 text-center">
-          <p class="text-2xl font-black text-emerald-950 mb-2">당신은 최고의 스피킹 탐험가! 🏆</p>
+          <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 스피킹 탐험가! 🏆</p>
           <p class="text-slate-500 mb-4 font-sans">누적 획득 코인: ${coins.toLocaleString()}개 🪙</p>
           <button onclick="loadQuestion(0)" class="toy-btn bg-[#03c75a] text-white font-bold text-lg px-8 py-3 rounded-2xl">
             처음부터 다시 도전하기 🚀
@@ -754,12 +693,10 @@
       giveUpBtn.style.display = "none";
       subMicBtn.style.display = "none";
       nextBtn.style.display = "none";
-      mascotIcon.textContent = "👑";
-      mascotBubble.textContent = "대단해! 오늘 공부도 대성공이야!";
     }
 
     /* ==========================================================================
-       8. CSV 데이터 파서 및 시트 비동기 동기화
+       8. CSV 파서 & 시트 자동 연동
        ========================================================================== */
     function parseCSV(text) {
       const rows = [];
@@ -794,8 +731,6 @@
 
     async function loadDataFromSheet() {
       refreshIcon.classList.add('animate-spin');
-      statusBadge.textContent = "시트 연결 중...";
-      statusBadge.className = "text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200";
 
       try {
         const separator = SHEET_CSV_URL.includes('?') ? '&' : '?';
@@ -804,7 +739,7 @@
         const csv = await res.text();
         const parsed = parseCSV(csv);
 
-        const rows = parsed.slice(1); // 헤더 건너뛰기
+        const rows = parsed.slice(1);
         const list = [];
 
         rows.forEach(r => {
@@ -825,8 +760,6 @@
         refreshIcon.classList.remove('animate-spin');
         if (list.length > 0) {
           questions = list;
-          statusBadge.textContent = "구글 시트 연동됨";
-          mascotBubble.textContent = `구글 시트에서 ${questions.length}개의 문장을 가져왔어요! ✨`;
           loadQuestion(0);
           return;
         }
@@ -841,7 +774,6 @@
         tokens: tokenizeEnglish(q.en),
         distractors: q.distractors
       }));
-      statusBadge.textContent = "기본 샘플 모드";
       loadQuestion(0);
     }
 
