@@ -154,7 +154,7 @@
       </div>
     </div>
 
-    <!-- 1단계: 스피킹 단독 영역 (처음에는 이것만 보임) -->
+    <!-- 1단계: 스피킹 단독 영역 (처음에는 이것만 노출됨) -->
     <div id="speakingChallengeZone" class="bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-10 shadow-xl border-2 border-indigo-100 flex flex-col items-center justify-center text-center gap-4">
       <p class="text-base sm:text-lg font-black text-indigo-900">
         머릿속으로 영어가 떠올랐나요?
@@ -171,8 +171,8 @@
       </button>
     </div>
 
-    <!-- 2단계: 블록 조립 영역 (처음엔 완전히 숨김) -->
-    <div id="blockAssemblyContainer" class="hidden flex-col gap-3.5">
+    <!-- 2단계: 블록 조립 영역 (인라인 스타일로 확실히 숨김 처리) -->
+    <div id="blockAssemblyContainer" style="display: none;" class="flex flex-col gap-3.5">
       <!-- Assembled Sentence Box -->
       <div class="bg-white/90 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-indigo-100">
         <div class="flex items-center justify-between mb-2">
@@ -210,26 +210,26 @@
       </div>
     </div>
 
-    <!-- Action Bar (상황에 따라 필요한 버튼만 표시) -->
+    <!-- Action Bar -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
-      <!-- 2단계에서 블록을 보고 다시 말해보고 싶을 때 -->
-      <button id="secondaryMicBtn" class="hidden toy-btn bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm sm:text-base px-4 sm:px-5 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
+      <!-- 2단계에서 블록을 보고 다시 말해보고 싶을 때 (초기 숨김) -->
+      <button id="secondaryMicBtn" style="display: none;" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm sm:text-base px-4 sm:px-5 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span class="text-lg">🎤</span>
         <span>다시 말하기</span>
       </button>
 
-      <!-- 2단계 블록 확인 버튼 -->
-      <button id="checkBlockBtn" class="hidden toy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
+      <!-- 2단계 블록 확인 버튼 (초기 숨김) -->
+      <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
       </button>
 
-      <!-- 3단계: 도저히 모를 때 정답 보기 버튼 (블록을 열었을 때만 활성화) -->
-      <button id="giveUpBtn" class="hidden toy-btn bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-sm sm:text-base px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
+      <!-- 3단계: 도저히 모를 때 정답 보기 버튼 (초기 숨김) -->
+      <button id="giveUpBtn" style="display: none;" class="toy-btn bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-sm sm:text-base px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>💡 정답 보기</span>
       </button>
 
-      <!-- 다음 문제 버튼 -->
-      <button id="nextBtn" class="hidden toy-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base sm:text-lg px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
+      <!-- 다음 문제 버튼 (초기 숨김) -->
+      <button id="nextBtn" style="display: none;" class="toy-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base sm:text-lg px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
         <span>다음 문제 ➡️</span>
       </button>
     </div>
@@ -508,7 +508,7 @@
         if (event.error === 'not-allowed') {
           speechBubbleEl.textContent = "마이크 권한을 허용해줘야 말할 수 있어요! 🎤";
         } else if (event.error === 'no-speech') {
-          speechBubbleEl.textContent = "목소리가 들리지 않았어요. 다시 마이크를 눌러볼까요?";
+          speechBubbleEl.textContent = "소리가 들리지 않았어요. 다시 마이크를 눌러볼까요?";
         } else {
           speechBubbleEl.textContent = "다시 한 번 큰 소리로 말해볼까요?";
         }
@@ -556,7 +556,6 @@
       const targetNorm = normalizeForComparison(q.rawEnglish || q.target.join(' '));
 
       if (spokenNorm === targetNorm) {
-        // 1단계 스피킹 한 번에 성공! (보너스 코인 15개)
         handleSuccess(15, `🎉 대단해! 한 번에 스피킹 성공! "${spokenText}" 🌟`);
       } else {
         sounds.wrong();
@@ -574,34 +573,34 @@
     function setStage(stage) {
       currentStage = stage;
       if (stage === 1) {
-        // 1단계: 스피킹 단독 모드 (블록 숨김)
+        // 1단계: 스피킹 단독 모드 (블록 100% 숨김)
         stageBadgeEl.textContent = "1단계: 입으로 말하기 🎤";
         stageBadgeEl.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-rose-100 text-rose-700 border border-rose-200";
-        speakingChallengeZone.classList.remove('hidden');
-        blockAssemblyContainer.classList.add('hidden');
-        secondaryMicBtn.classList.add('hidden');
-        checkBlockBtn.classList.add('hidden');
-        giveUpBtn.classList.add('hidden');
+        speakingChallengeZone.style.display = "flex";
+        blockAssemblyContainer.style.display = "none"; // 확실한 숨김
+        secondaryMicBtn.style.display = "none";
+        checkBlockBtn.style.display = "none";
+        giveUpBtn.style.display = "none";
       } else if (stage === 2) {
-        // 2단계: 블록 힌트 조립 모드
+        // 2단계: 블록 힌트 조립 모드 (블록 등장)
         stageBadgeEl.textContent = "2단계: 블록 조립 힌트 🧩";
         stageBadgeEl.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-amber-100 text-amber-800 border border-amber-300";
-        speakingChallengeZone.classList.add('hidden');
-        blockAssemblyContainer.classList.remove('hidden');
-        secondaryMicBtn.classList.remove('hidden');
-        checkBlockBtn.classList.remove('hidden');
-        giveUpBtn.classList.remove('hidden'); // 3단계 정답 보기 활성화
+        speakingChallengeZone.style.display = "none";
+        blockAssemblyContainer.style.display = "flex"; // 확실한 노출
+        secondaryMicBtn.style.display = "inline-flex";
+        checkBlockBtn.style.display = "inline-flex";
+        giveUpBtn.style.display = "inline-flex"; // 3단계 버튼 활성화
         mascotReactionEl.textContent = "🐱";
         speechBubbleEl.textContent = "블록을 순서대로 골라 문장을 완성해봐! (모르면 정답 보기를 눌러봐)";
       } else if (stage === 3) {
         // 3단계: 정답 공개 모드
         stageBadgeEl.textContent = "3단계: 정답 확인 및 읽기 💡";
         stageBadgeEl.className = "text-xs font-bold px-2.5 py-1 rounded-xl bg-purple-100 text-purple-800 border border-purple-300";
-        speakingChallengeZone.classList.add('hidden');
-        blockAssemblyContainer.classList.remove('hidden');
-        checkBlockBtn.classList.add('hidden');
-        giveUpBtn.classList.add('hidden');
-        secondaryMicBtn.classList.add('hidden');
+        speakingChallengeZone.style.display = "none";
+        blockAssemblyContainer.style.display = "flex";
+        checkBlockBtn.style.display = "none";
+        giveUpBtn.style.display = "none";
+        secondaryMicBtn.style.display = "none";
       }
     }
 
@@ -623,7 +622,6 @@
       assembledZoneEl.innerHTML = '';
       wordBankZoneEl.innerHTML = '';
 
-      // 정답 블록들을 조립 박스에 순서대로 자동 배치
       q.target.forEach((word, idx) => {
         const block = createWordBlock(word, idx);
         assembledZoneEl.appendChild(block);
@@ -632,12 +630,10 @@
       mascotReactionEl.textContent = "💡";
       speechBubbleEl.textContent = "정답 문장이야! 원어민 소리를 듣고 큰 소리로 따라 해봐!";
 
-      // 문장을 원어민 음성으로 읽어줌
       const fullSpeech = formatForSpeech(q.target);
       speakSentence(fullSpeech);
 
-      // 다음 문제 버튼 노출
-      nextBtn.classList.remove('hidden');
+      nextBtn.style.display = "inline-flex";
     }
 
     /* ==========================================================================
@@ -673,7 +669,7 @@
       }
 
       currentIndex = index;
-      nextBtn.classList.add('hidden');
+      nextBtn.style.display = "none";
 
       const q = questions[currentIndex];
       koreanSentenceEl.textContent = q.korean;
@@ -697,7 +693,7 @@
         wordBankZoneEl.appendChild(block);
       });
 
-      // 무조건 1단계 스피킹 단독 모드로 시작
+      // 🔥 처음 시작할 때는 무조건 1단계 스피킹 단독 모드로 블록을 완전히 숨김!
       setStage(1);
       mascotReactionEl.textContent = "🐱";
       speechBubbleEl.textContent = "마이크 버튼을 누르고 영어로 말해봐!";
@@ -718,7 +714,7 @@
       block.innerHTML = `<span>${wordText}</span>`;
 
       block.addEventListener('click', () => {
-        if (currentStage === 3) return; // 3단계는 보기 전용
+        if (currentStage === 3) return;
         sounds.click();
         if (block.parentElement === wordBankZoneEl) {
           moveBlockToAssembled(block);
@@ -814,12 +810,12 @@
       const fullSpeech = formatForSpeech(q.target);
       speakSentence(fullSpeech);
 
-      // 진행 버튼 정리 & 다음 문제 버튼 노출
-      checkBlockBtn.classList.add('hidden');
-      giveUpBtn.classList.add('hidden');
-      speakingChallengeZone.classList.add('hidden');
-      secondaryMicBtn.classList.add('hidden');
-      nextBtn.classList.remove('hidden');
+      // UI 제어
+      checkBlockBtn.style.display = "none";
+      giveUpBtn.style.display = "none";
+      speakingChallengeZone.style.display = "none";
+      secondaryMicBtn.style.display = "none";
+      nextBtn.style.display = "inline-flex";
     }
 
     // 2단계: 블록 정답 확인 클릭
@@ -883,8 +879,8 @@
       });
 
       koreanSentenceEl.textContent = "🎉 축하합니다! 모든 미션을 완료했어요!";
-      speakingChallengeZone.classList.add('hidden');
-      blockAssemblyContainer.classList.remove('hidden');
+      speakingChallengeZone.style.display = "none";
+      blockAssemblyContainer.style.display = "flex";
       assembledZoneEl.innerHTML = `
         <div class="w-full py-8 text-center">
           <p class="text-2xl font-black text-indigo-800 mb-2">당신은 최고의 스피킹 탐험가! 🏆</p>
@@ -895,10 +891,10 @@
         </div>
       `;
       wordBankZoneEl.innerHTML = '';
-      checkBlockBtn.classList.add('hidden');
-      giveUpBtn.classList.add('hidden');
-      secondaryMicBtn.classList.add('hidden');
-      nextBtn.classList.add('hidden');
+      checkBlockBtn.style.display = "none";
+      giveUpBtn.style.display = "none";
+      secondaryMicBtn.style.display = "none";
+      nextBtn.style.display = "none";
       mascotReactionEl.textContent = "👑";
       speechBubbleEl.textContent = "완벽해! 오늘 스피킹 공부도 대성공이야!";
     }
