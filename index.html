@@ -222,7 +222,7 @@
         <span>💡 정답 보기</span>
       </button>
 
-      <!-- 🔊 원어민 다시 듣기 버튼 (정답 확인/보기 후 나타남) -->
+      <!-- 🔊 원어민 다시 듣기 버튼 -->
       <button id="listenAgainBtn" style="display: none;" class="toy-btn bg-sky-500 hover:bg-sky-600 text-white font-bold text-base sm:text-lg px-5 sm:px-7 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>🔊 다시 듣기</span>
       </button>
@@ -406,13 +406,11 @@
     function speakText(text) {
       if (!('speechSynthesis' in window) || !text) return;
 
-      // 브라우저 큐 취소 & 일시정지 상태 강제 해제
       window.speechSynthesis.cancel();
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
       }
 
-      // 효과음과의 충돌을 방지하기 위한 0.12초 안전 딜레이
       setTimeout(() => {
         try {
           const utter = new SpeechSynthesisUtterance(text.trim());
@@ -509,7 +507,7 @@
       const targetClean = cleanTextForCheck(q.en);
 
       if (spokenClean === targetClean) {
-        onAnswerCorrect(15);
+        onAnswerCorrect(3); // 🟢 1단계 말하기 직접 성공 시: 게이지 +3
       } else {
         sound.wrong();
       }
@@ -571,7 +569,6 @@
         assembledSlots.appendChild(blk);
       });
 
-      // 확실한 음성 출력 호출
       speakText(q.en);
       nextBtn.style.display = "inline-flex";
     }
@@ -647,7 +644,6 @@
       el.innerHTML = `<span>${word}</span>`;
 
       el.addEventListener('click', () => {
-        // 3단계(정답 상태)일 때는 블록을 누르면 다시 영어를 읽어줍니다.
         if (stage === 3) {
           speakText(questions[curIndex].en);
           return;
@@ -709,7 +705,7 @@
     });
 
     /* ==========================================================================
-       7. 정답 판정 및 구글 시트 연동 게이지 보상
+       7. 정답 판정 및 구글 시트 연동 게이지 보상 (+3 / +2 적용)
        ========================================================================== */
     function onAnswerCorrect(gaugePoints) {
       sound.success();
@@ -738,7 +734,7 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(10);
+        onAnswerCorrect(2); // 🟢 2단계 블록 힌트 조립 성공 시: 게이지 +2
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
