@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>블럭 스피킹 원정대 🧩🎤</title>
+  <title>블록 스피킹 원정대 🧩🎤</title>
   
   <!-- Tailwind CSS & Confetti -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -206,13 +206,8 @@
       </div>
     </div>
 
-    <!-- 하단 컨트롤 버튼 바 -->
+    <!-- 하단 컨트롤 버튼 바 (다시 말하기 버튼 삭제 완료) -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
-      <button id="subMicBtn" style="display: none;" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm sm:text-base px-4 sm:px-5 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
-        <span class="text-lg">🎤</span>
-        <span>다시 말하기</span>
-      </button>
-
       <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
       </button>
@@ -399,7 +394,6 @@
     const mainMicBtn = document.getElementById('mainMicBtn');
     const mainMicIcon = document.getElementById('mainMicIcon');
     const mainMicLabel = document.getElementById('mainMicLabel');
-    const subMicBtn = document.getElementById('subMicBtn');
     const openBlockBtn = document.getElementById('openBlockBtn');
     const checkBlockBtn = document.getElementById('checkBlockBtn');
     const giveUpBtn = document.getElementById('giveUpBtn');
@@ -456,7 +450,7 @@
     }
 
     /* ==========================================================================
-       4. Web Speech STT (음성 인식 마이크)
+       4. Web Speech STT (1단계 스피킹 마이크)
        ========================================================================== */
     function cleanTextForCheck(str) {
       return str.toLowerCase().replace(/[.,!?;:'"()\-]/g, '').replace(/\s+/g, ' ').trim();
@@ -481,7 +475,6 @@
         mainMicBtn.classList.add('mic-active');
         mainMicIcon.textContent = "🛑";
         mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
-        subMicBtn.classList.add('mic-active');
       };
 
       recognition.onresult = (e) => {
@@ -517,11 +510,9 @@
       mainMicBtn.classList.remove('mic-active');
       mainMicIcon.textContent = "🎤";
       mainMicLabel.textContent = "마이크 누르고 말하기";
-      subMicBtn.classList.remove('mic-active');
     }
 
     mainMicBtn.addEventListener('click', toggleSTT);
-    subMicBtn.addEventListener('click', toggleSTT);
 
     function handleSpokenResult(spoken) {
       const q = questions[curIndex];
@@ -543,14 +534,12 @@
       if (stage === 1) {
         stage1Box.style.display = "flex";
         stage2Box.style.display = "none";
-        subMicBtn.style.display = "none";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
         listenAgainBtn.style.display = "none";
       } else if (stage === 2) {
         stage1Box.style.display = "none";
         stage2Box.style.display = "flex";
-        subMicBtn.style.display = "inline-flex";
         checkBlockBtn.style.display = "inline-flex";
         giveUpBtn.style.display = "inline-flex";
         listenAgainBtn.style.display = "none";
@@ -559,7 +548,6 @@
         stage2Box.style.display = "flex";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
-        subMicBtn.style.display = "none";
         listenAgainBtn.style.display = "inline-flex";
       }
     }
@@ -597,7 +585,7 @@
     }
 
     /* ==========================================================================
-       6. 블록 조립 및 파싱 로직 (💡 오직 실제 정답 단어들로만 블록 구성)
+       6. 블록 조립 및 파싱 로직 (정답 단어만 생성)
        ========================================================================== */
     function tokenizeEnglish(sentence) {
       if (!sentence) return [];
@@ -643,7 +631,6 @@
       emptyGuideText.style.display = 'flex';
       wordPool.innerHTML = '';
 
-      // 💡 C열 방해 단어 배제: 오직 정답 토큰(q.tokens)만 섞어서 배치
       const shuffled = shuffleArray(q.tokens);
 
       shuffled.forEach((word, i) => {
@@ -723,6 +710,7 @@
 
     clearBtn.addEventListener('click', () => {
       if (stage === 3) return;
+      unlockAudioSystem();
       sound.pop();
       const placed = Array.from(assembledSlots.querySelectorAll('.word-block'));
       placed.forEach(b => wordPool.appendChild(b));
@@ -743,7 +731,6 @@
       stage1Box.style.display = "none";
       checkBlockBtn.style.display = "none";
       giveUpBtn.style.display = "none";
-      subMicBtn.style.display = "none";
       listenAgainBtn.style.display = "inline-flex";
       nextBtn.style.display = "inline-flex";
     }
@@ -794,13 +781,12 @@
       wordPool.innerHTML = '';
       checkBlockBtn.style.display = "none";
       giveUpBtn.style.display = "none";
-      subMicBtn.style.display = "none";
       listenAgainBtn.style.display = "none";
       nextBtn.style.display = "none";
     }
 
     /* ==========================================================================
-       8. CSV 파서 & 시트 자동 연동 (A열: 한글, B열: 영어 문장만 추출)
+       8. CSV 파서 & 시트 자동 연동 (Date.now 실시간 호출)
        ========================================================================== */
     function parseCSV(text) {
       const rows = [];
@@ -850,7 +836,6 @@
           const kr = r[0] || '';
           const en = r[1] || '';
 
-          // A열(한글)과 B열(영어)만 정직하게 로드 (C열은 완전 무시)
           if (kr.trim() && en.trim()) {
             list.push({
               kr: kr.trim(),
