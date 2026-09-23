@@ -217,8 +217,14 @@
         <span>✨ 블록 정답 확인</span>
       </button>
 
+      <!-- 💡 정답 보기 버튼 -->
       <button id="giveUpBtn" style="display: none;" class="toy-btn bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-sm sm:text-base px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>💡 정답 보기</span>
+      </button>
+
+      <!-- 🔊 원어민 다시 듣기 버튼 (정답 확인/보기 후 나타남) -->
+      <button id="listenAgainBtn" style="display: none;" class="toy-btn bg-sky-500 hover:bg-sky-600 text-white font-bold text-base sm:text-lg px-5 sm:px-7 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
+        <span>🔊 다시 듣기</span>
       </button>
 
       <button id="nextBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white font-bold text-base sm:text-lg px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
@@ -275,8 +281,6 @@
        2. 구글 스프레드시트 & 클라우드 실시간 연동 (매칭 게임과 완벽 공유)
        ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
-    
-    // 매칭 게임과 동일한 구글 앱스 스크립트 웹 앱 URL
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
 
     const BACKUP_QUESTIONS = [
@@ -304,12 +308,11 @@
     let questions = [];
     let curIndex = 0;
     
-    // 매칭 게임과 공유되는 클라우드 상태
     let cloudState = {
       coins: 0,
-      totalMatchedCount: 0, // 게이지 누적 칸수
-      giftCount: 0,         // 선물 개수
-      maxGauge: 500         // 매칭게임 기준 500칸 완주 시 선물 1개
+      totalMatchedCount: 0,
+      giftCount: 0,
+      maxGauge: 500
     };
 
     let stage = 1;
@@ -334,10 +337,10 @@
     const openBlockBtn = document.getElementById('openBlockBtn');
     const checkBlockBtn = document.getElementById('checkBlockBtn');
     const giveUpBtn = document.getElementById('giveUpBtn');
+    const listenAgainBtn = document.getElementById('listenAgainBtn');
     const nextBtn = document.getElementById('nextBtn');
     const clearBtn = document.getElementById('clearBtn');
 
-    // ☁️ 구글 시트에서 최신 게이지 & 선물 데이터 동기화
     async function syncFromCloud() {
       try {
         const res = await fetch(CLOUD_SCRIPT_URL);
@@ -354,7 +357,6 @@
       }
     }
 
-    // ☁️ 구글 시트로 변경된 게이지 & 선물 저장
     async function syncToCloud() {
       try {
         if (cloudState.totalMatchedCount >= cloudState.maxGauge) {
@@ -388,7 +390,7 @@
     }
 
     /* ==========================================================================
-       3. Web Speech TTS (소리 막힘 완벽 해결)
+       3. Web Speech TTS (확실한 음성 재생 보장 엔진)
        ========================================================================== */
     let cachedVoices = [];
     function loadVoices() {
@@ -404,29 +406,34 @@
     function speakText(text) {
       if (!('speechSynthesis' in window) || !text) return;
 
+      // 브라우저 큐 취소 & 일시정지 상태 강제 해제
       window.speechSynthesis.cancel();
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
       }
 
+      // 효과음과의 충돌을 방지하기 위한 0.12초 안전 딜레이
       setTimeout(() => {
         try {
-          const utter = new SpeechSynthesisUtterance(text);
+          const utter = new SpeechSynthesisUtterance(text.trim());
           utter.lang = 'en-US';
           utter.rate = 0.88;
           utter.pitch = 1.05;
 
           if (cachedVoices.length === 0) loadVoices();
-          const targetVoice = cachedVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Samantha') || v.name.includes('Jenny'))) ||
+          const targetVoice = cachedVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Samantha') || v.name.includes('Jenny') || v.name.includes('Ava'))) ||
                               cachedVoices.find(v => v.lang.startsWith('en'));
           if (targetVoice) utter.voice = targetVoice;
 
           window.speechSynthesis.speak(utter);
-          if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
         } catch (e) {
           console.error("TTS 에러:", e);
         }
-      }, 40);
+      }, 120);
     }
 
     /* ==========================================================================
@@ -502,7 +509,7 @@
       const targetClean = cleanTextForCheck(q.en);
 
       if (spokenClean === targetClean) {
-        onAnswerCorrect(15); // 스피킹 단독 정답 시 게이지 15칸 상승!
+        onAnswerCorrect(15);
       } else {
         sound.wrong();
       }
@@ -519,18 +526,21 @@
         subMicBtn.style.display = "none";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
+        listenAgainBtn.style.display = "none";
       } else if (stage === 2) {
         stage1Box.style.display = "none";
         stage2Box.style.display = "flex";
         subMicBtn.style.display = "inline-flex";
         checkBlockBtn.style.display = "inline-flex";
         giveUpBtn.style.display = "inline-flex";
+        listenAgainBtn.style.display = "none";
       } else if (stage === 3) {
         stage1Box.style.display = "none";
         stage2Box.style.display = "flex";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
         subMicBtn.style.display = "none";
+        listenAgainBtn.style.display = "inline-flex";
       }
     }
 
@@ -539,10 +549,16 @@
       setGameStage(2);
     });
 
+    // 💡 정답 보기 클릭: 효과음 생략하고 오디오 채널을 즉시 열어 확실히 영어 발음 출력
     giveUpBtn.addEventListener('click', () => {
-      sound.pop();
       setGameStage(3);
       revealAnswerDirectly();
+    });
+
+    // 🔊 다시 듣기 버튼 클릭
+    listenAgainBtn.addEventListener('click', () => {
+      const q = questions[curIndex];
+      speakText(q.en);
     });
 
     function revealAnswerDirectly() {
@@ -555,6 +571,7 @@
         assembledSlots.appendChild(blk);
       });
 
+      // 확실한 음성 출력 호출
       speakText(q.en);
       nextBtn.style.display = "inline-flex";
     }
@@ -596,6 +613,7 @@
 
       curIndex = idx;
       nextBtn.style.display = "none";
+      listenAgainBtn.style.display = "none";
 
       const q = questions[curIndex];
       koreanSentence.textContent = q.kr;
@@ -629,7 +647,12 @@
       el.innerHTML = `<span>${word}</span>`;
 
       el.addEventListener('click', () => {
-        if (stage === 3) return;
+        // 3단계(정답 상태)일 때는 블록을 누르면 다시 영어를 읽어줍니다.
+        if (stage === 3) {
+          speakText(questions[curIndex].en);
+          return;
+        }
+
         sound.pop();
         if (el.parentElement === wordPool) {
           emptyGuideText.style.display = 'none';
@@ -699,6 +722,7 @@
       checkBlockBtn.style.display = "none";
       giveUpBtn.style.display = "none";
       subMicBtn.style.display = "none";
+      listenAgainBtn.style.display = "inline-flex";
       nextBtn.style.display = "inline-flex";
     }
 
@@ -714,7 +738,7 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(10); // 블록 힌트 정답 시 게이지 10칸 상승!
+        onAnswerCorrect(10);
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
@@ -747,6 +771,7 @@
       checkBlockBtn.style.display = "none";
       giveUpBtn.style.display = "none";
       subMicBtn.style.display = "none";
+      listenAgainBtn.style.display = "none";
       nextBtn.style.display = "none";
     }
 
@@ -785,10 +810,8 @@
     }
 
     async function loadDataFromSheet() {
-      // 1. 구글 시트에서 클라우드 선물/게이지 먼저 로딩
       await syncFromCloud();
 
-      // 2. 구글 시트에서 문제 데이터 로딩
       try {
         const separator = SHEET_CSV_URL.includes('?') ? '&' : '?';
         const res = await fetch(`${SHEET_CSV_URL}${separator}cb=${Date.now()}`);
