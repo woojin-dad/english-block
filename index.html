@@ -80,6 +80,18 @@
     .animate-shake {
       animation: shakeWrong 0.35s ease;
     }
+
+    /* Mic pulse animation */
+    @keyframes micPulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .mic-recording {
+      animation: micPulse 1.2s infinite;
+      background-color: #ef4444 !important;
+      border-color: #b91c1c !important;
+    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-amber-100 via-indigo-50 to-sky-100 min-h-screen flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 selection:bg-yellow-200">
@@ -95,7 +107,7 @@
           블록 영작 원정대
           <span class="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full uppercase tracking-wider font-english font-bold">Junior</span>
         </h1>
-        <p class="text-xs text-slate-500 font-sans">단어 블록을 모아 영어 문장을 완성해봐요!</p>
+        <p class="text-xs text-slate-500 font-sans">블록으로 맞추거나 🎤 입으로 말해봐요!</p>
       </div>
     </div>
 
@@ -110,7 +122,7 @@
         <span id="streakCount" class="font-bold text-rose-600 text-base sm:text-lg">0</span>
       </div>
       
-      <!-- 구글 시트 최신 문장 다시 가져오기 -->
+      <!-- 구글 시트 새로고침 -->
       <button id="refreshSheetBtn" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3.5 py-2 rounded-2xl flex items-center gap-1" title="구글 시트 최신 문장 다시 가져오기">
         <span id="refreshIcon">🔄</span>
         <span class="hidden sm:inline font-bold">새로고침</span>
@@ -132,7 +144,7 @@
 
       <!-- Korean sentence prompt -->
       <div class="text-center py-2 sm:py-3">
-        <span class="text-xs font-bold text-indigo-400 block mb-1">우리말 문장을 보고 영어 블록을 맞춰보세요!</span>
+        <span class="text-xs font-bold text-indigo-400 block mb-1">우리말 문장을 보고 블록을 조립하거나 마이크로 말해보세요!</span>
         <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-indigo-950 tracking-tight leading-snug">
           구글 시트에서 문장을 가져오는 중입니다... 🧩
         </div>
@@ -143,8 +155,8 @@
         <div id="mascotReaction" class="text-3xl sm:text-4xl transition-all duration-300">
           🐱
         </div>
-        <div id="speechBubble" class="ml-2.5 text-xs sm:text-sm bg-indigo-50 text-indigo-800 border border-indigo-200 px-3 py-1 rounded-2xl font-bold max-w-xs sm:max-w-md truncate">
-          알맞은 블록을 순서대로 골라봐!
+        <div id="speechBubble" class="ml-2.5 text-xs sm:text-sm bg-indigo-50 text-indigo-800 border border-indigo-200 px-3 py-1.5 rounded-2xl font-bold max-w-xs sm:max-w-md">
+          블록을 맞추거나 🎤 마이크로 말해봐!
         </div>
       </div>
     </div>
@@ -166,7 +178,7 @@
       <div id="assembledZone" class="block-slot-zone p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-3 transition-colors duration-200">
         <div id="emptySlotPlaceholder" class="w-full text-center text-slate-400 text-xs sm:text-sm py-3.5 flex flex-col items-center justify-center pointer-events-none">
           <span class="text-2xl mb-1">👇</span>
-          <span>아래 단어 블록을 클릭하거나 위로 끌어와 문장을 만들어보세요!</span>
+          <span>단어 블록을 클릭해서 맞추거나, 아래 🎤 마이크 버튼을 눌러 입으로 말해보세요!</span>
         </div>
       </div>
     </div>
@@ -185,18 +197,24 @@
       </div>
     </div>
 
-    <!-- Action Buttons Bar -->
-    <div class="flex items-center justify-center gap-3 sm:gap-4 mt-1 pb-4">
-      <button id="speakBtn" class="toy-btn bg-purple-500 hover:bg-purple-600 text-white font-bold text-base sm:text-lg px-5 py-3 rounded-2xl flex items-center gap-2 shadow-md">
-        <span class="text-xl">🔊</span>
+    <!-- Action Buttons Bar: Speak, Mic, Check, Next -->
+    <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
+      <button id="speakBtn" class="toy-btn bg-purple-500 hover:bg-purple-600 text-white font-bold text-sm sm:text-base px-4 sm:px-5 py-3 rounded-2xl flex items-center gap-1.5 shadow-md" title="원어민 발음 듣기">
+        <span class="text-lg">🔊</span>
         <span>듣기</span>
       </button>
 
-      <button id="checkBtn" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg sm:text-xl px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 shadow-md">
+      <!-- 🎤 음성 인식 마이크 버튼 -->
+      <button id="micBtn" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm sm:text-base px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-1.5 shadow-md transition-all" title="영어로 입으로 말하기">
+        <span id="micIcon" class="text-lg">🎤</span>
+        <span id="micText">말하기</span>
+      </button>
+
+      <button id="checkBtn" class="toy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 정답 확인</span>
       </button>
 
-      <button id="nextBtn" class="hidden toy-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg sm:text-xl px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
+      <button id="nextBtn" class="hidden toy-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base sm:text-lg px-7 sm:px-10 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
         <span>다음 문제 ➡️</span>
       </button>
     </div>
@@ -233,6 +251,7 @@
     const sounds = {
       click() { playTone(580, 'triangle', 0.07); },
       drop() { playTone(440, 'sine', 0.09); },
+      micStart() { playTone(700, 'sine', 0.12); },
       correct() {
         playTone(523.25, 'sine', 0.14, 0.0);
         playTone(659.25, 'sine', 0.14, 0.08);
@@ -253,22 +272,23 @@
        ========================================================================== */
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
 
-    // 연결 실패 시 대비용 기본 예시 문장
     const FALLBACK_QUESTIONS = [
       {
         korean: "나는 매일 아침 사과를 먹어요.",
         target: ["I", "eat", "an", "apple", "every", "morning", "."],
+        rawEnglish: "I eat an apple every morning.",
         distractors: ["eats", "apples"]
       },
       {
         korean: "그 고양이는 침대 위에서 자고 있어요.",
         target: ["The", "cat", "is", "sleeping", "on", "the", "bed", "."],
+        rawEnglish: "The cat is sleeping on the bed.",
         distractors: ["sleep", "under"]
       }
     ];
 
     /* ==========================================================================
-       3. 상태 변수 및 색상 팔레트
+       3. 상태 변수 및 블록 팔레트
        ========================================================================== */
     const BLOCK_PALETTES = [
       { bg: "bg-amber-100", text: "text-amber-950", border: "border-amber-300", hover: "hover:bg-amber-200" },
@@ -284,6 +304,8 @@
     let coins = parseInt(localStorage.getItem('block_english_coins') || '0', 10);
     let currentStreak = 0;
     let isCurrentAnswerChecked = false;
+    let isRecording = false;
+    let recognition = null;
 
     // DOM References
     const coinScoreEl = document.getElementById('coinScore');
@@ -297,6 +319,9 @@
     const checkBtn = document.getElementById('checkBtn');
     const nextBtn = document.getElementById('nextBtn');
     const speakBtn = document.getElementById('speakBtn');
+    const micBtn = document.getElementById('micBtn');
+    const micIcon = document.getElementById('micIcon');
+    const micText = document.getElementById('micText');
     const clearSlotsBtn = document.getElementById('clearSlotsBtn');
     const mascotReactionEl = document.getElementById('mascotReaction');
     const speechBubbleEl = document.getElementById('speechBubble');
@@ -307,7 +332,7 @@
     streakCountEl.textContent = currentStreak;
 
     /* ==========================================================================
-       4. 토크나이저 & CSV 파서 (A, B, C열만 파싱)
+       4. 토크나이저 & CSV 파서
        ========================================================================== */
     function tokenizeEnglishSentence(sentence) {
       if (!sentence) return [];
@@ -378,19 +403,19 @@
         const parsedRows = parseCSV(csvText);
         if (!parsedRows || parsedRows.length === 0) return [];
 
-        // 첫 번째 줄(헤더) 건너뛰기
         const dataRows = parsedRows.slice(1);
         const validQuestions = [];
 
         dataRows.forEach(row => {
-          const korean = row[0] || '';       // A열: 한글 문장
-          const english = row[1] || '';      // B열: 영어 정답 문장
-          const distractors = row[2] || '';  // C열: 방해 단어
+          const korean = row[0] || '';
+          const english = row[1] || '';
+          const distractors = row[2] || '';
 
           if (korean.trim() && english.trim()) {
             validQuestions.push({
               korean: korean.trim(),
               target: tokenizeEnglishSentence(english),
+              rawEnglish: english.trim(),
               distractors: parseDistractors(distractors)
             });
           }
@@ -404,7 +429,7 @@
     }
 
     /* ==========================================================================
-       5. Web Speech API (TTS)
+       5. Web Speech API (TTS 발음 읽기)
        ========================================================================== */
     function speakSentence(text) {
       if (!('speechSynthesis' in window)) return;
@@ -426,7 +451,113 @@
     }
 
     /* ==========================================================================
-       6. 게임 렌더링 & 블록 조립
+       6. Web Speech API (STT 음성 인식 - 스마트 비교 엔진)
+       ========================================================================== */
+    function normalizeForComparison(str) {
+      // 대소문자 무시, 문장부호 제거, 다중 공백 제거
+      return str.toLowerCase().replace(/[.,!?;:'"()\-]/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        micBtn.classList.add('opacity-50');
+        micBtn.title = "현재 브라우저는 음성 인식을 지원하지 않습니다. (크롬/엣지 권장)";
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isRecording = true;
+        sounds.micStart();
+        micBtn.classList.add('mic-recording');
+        micIcon.textContent = "🛑";
+        micText.textContent = "듣는 중...";
+        mascotReactionEl.textContent = "👂";
+        speechBubbleEl.textContent = "영어로 또박또박 말해줘! 듣고 있어...";
+      };
+
+      recognition.onresult = (event) => {
+        const spokenText = event.results[0][0].transcript;
+        mascotReactionEl.textContent = "🗣️";
+        speechBubbleEl.textContent = `내가 들은 말: "${spokenText}"`;
+        handleSpokenAnswer(spokenText);
+      };
+
+      recognition.onerror = (event) => {
+        stopRecording();
+        mascotReactionEl.textContent = "🐣";
+        if (event.error === 'not-allowed') {
+          speechBubbleEl.textContent = "마이크 권한을 허용해줘야 말할 수 있어요! 🎤";
+        } else if (event.error === 'no-speech') {
+          speechBubbleEl.textContent = "목소리가 들리지 않았어요. 다시 버튼을 눌러볼까?";
+        } else {
+          speechBubbleEl.textContent = "다시 한 번 큰 소리로 말해볼까?";
+        }
+      };
+
+      recognition.onend = () => {
+        stopRecording();
+      };
+    }
+
+    function startRecording() {
+      if (!recognition) {
+        alert("이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 또는 Edge 브라우저를 사용해 주세요!");
+        return;
+      }
+      try {
+        recognition.start();
+      } catch (e) {
+        recognition.stop();
+      }
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      micBtn.classList.remove('mic-recording');
+      micIcon.textContent = "🎤";
+      micText.textContent = "말하기";
+    }
+
+    micBtn.addEventListener('click', () => {
+      if (isRecording) {
+        recognition.stop();
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    });
+
+    function handleSpokenAnswer(spokenText) {
+      const q = questions[currentIndex];
+      const spokenNorm = normalizeForComparison(spokenText);
+      const targetNorm = normalizeForComparison(q.rawEnglish || q.target.join(' '));
+
+      if (spokenNorm === targetNorm) {
+        // 음성 정답 성공!
+        handleCorrectRoutine();
+        speechBubbleEl.textContent = `🎉 발음 최고야! "${spokenText}" 정답! 🌟`;
+      } else {
+        // 아쉬운 발음 / 오답
+        sounds.wrong();
+        assembledZoneEl.classList.add('animate-shake');
+        setTimeout(() => assembledZoneEl.classList.remove('animate-shake'), 400);
+
+        currentStreak = 0;
+        streakCountEl.textContent = currentStreak;
+
+        mascotReactionEl.textContent = "🐣";
+        speechBubbleEl.innerHTML = `들린 말: <span class="text-rose-600 font-bold">"${spokenText}"</span><br>다시 말하거나 블록으로 맞춰볼까?`;
+      }
+    }
+
+    /* ==========================================================================
+       7. 게임 렌더링 & 블록 조립
        ========================================================================== */
     function shuffle(arr) {
       const copy = [...arr];
@@ -466,13 +597,11 @@
       koreanSentenceEl.textContent = q.korean;
       questionBadgeEl.textContent = `문제 ${currentIndex + 1} / ${questions.length}`;
 
-      // Clear zones
       assembledZoneEl.innerHTML = '';
       assembledZoneEl.appendChild(emptySlotPlaceholderEl);
       emptySlotPlaceholderEl.style.display = 'flex';
       wordBankZoneEl.innerHTML = '';
 
-      // Prepare blocks
       const allWords = [...q.target];
       if (q.distractors && q.distractors.length > 0) {
         allWords.push(...q.distractors);
@@ -485,7 +614,7 @@
       });
 
       mascotReactionEl.textContent = "🐱";
-      speechBubbleEl.textContent = "알맞은 블록을 순서대로 골라봐!";
+      speechBubbleEl.textContent = "블록을 맞추거나 🎤 마이크로 말해봐!";
     }
 
     function createWordBlock(wordText, id) {
@@ -502,7 +631,6 @@
 
       block.innerHTML = `<span>${wordText}</span>`;
 
-      // Touch / Click to toggle
       block.addEventListener('click', () => {
         sounds.click();
         if (block.parentElement === wordBankZoneEl) {
@@ -512,7 +640,6 @@
         }
       });
 
-      // Drag and Drop
       block.addEventListener('dragstart', (e) => {
         sounds.click();
         block.classList.add('opacity-40', 'scale-95');
@@ -582,15 +709,36 @@
     }
 
     /* ==========================================================================
-       7. 정답 확인 및 보상
-       ========================================================================= */
+       8. 정답 판정 & 보상 루틴
+       ========================================================================== */
+    function handleCorrectRoutine() {
+      sounds.correct();
+      triggerConfetti();
+
+      mascotReactionEl.textContent = "🥳";
+
+      coins += 10;
+      currentStreak += 1;
+      coinScoreEl.textContent = coins.toLocaleString();
+      streakCountEl.textContent = currentStreak;
+      localStorage.setItem('block_english_coins', coins);
+
+      const q = questions[currentIndex];
+      const fullSpeech = formatForSpeech(q.target);
+      speakSentence(fullSpeech);
+
+      checkBtn.classList.add('hidden');
+      nextBtn.classList.remove('hidden');
+      isCurrentAnswerChecked = true;
+    }
+
     checkBtn.addEventListener('click', () => {
       const q = questions[currentIndex];
       const userWords = getAssembledSentence();
 
       if (userWords.length === 0) {
         mascotReactionEl.textContent = "🤔";
-        speechBubbleEl.textContent = "먼저 단어 블록을 조립해줘!";
+        speechBubbleEl.textContent = "블록을 조립하거나 🎤 마이크로 말해줘!";
         playTone(300, 'sine', 0.1);
         return;
       }
@@ -599,24 +747,8 @@
         userWords.every((word, i) => word.toLowerCase() === q.target[i].toLowerCase());
 
       if (isCorrect) {
-        sounds.correct();
-        triggerConfetti();
-
-        mascotReactionEl.textContent = "🥳";
-        speechBubbleEl.textContent = "정답이야! 참 잘했어! 🌟";
-
-        coins += 10;
-        currentStreak += 1;
-        coinScoreEl.textContent = coins.toLocaleString();
-        streakCountEl.textContent = currentStreak;
-        localStorage.setItem('block_english_coins', coins);
-
-        const fullSpeech = formatForSpeech(q.target);
-        speakSentence(fullSpeech);
-
-        checkBtn.classList.add('hidden');
-        nextBtn.classList.remove('hidden');
-        isCurrentAnswerChecked = true;
+        handleCorrectRoutine();
+        speechBubbleEl.textContent = "블록 정답이야! 참 잘했어! 🌟";
       } else {
         sounds.wrong();
         assembledZoneEl.classList.add('animate-shake');
@@ -688,7 +820,7 @@
     }
 
     /* ==========================================================================
-       8. 데이터 초기화
+       9. 데이터 초기화
        ========================================================================== */
     async function loadDataAndInitialize() {
       refreshIcon.classList.add('animate-spin');
@@ -719,6 +851,7 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
+      initSpeechRecognition();
       loadDataAndInitialize();
     });
   </script>
