@@ -240,7 +240,6 @@
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let isAudioUnlocked = false;
 
-    // 브라우저의 소리 차단 빗장을 완벽 해제하는 언락 함수
     function unlockAudioSystem() {
       if (isAudioUnlocked) return;
       if (audioCtx.state === 'suspended') {
@@ -296,7 +295,7 @@
     };
 
     /* ==========================================================================
-       2. 무조건 소리 나는 원어민 TTS (SpeechSynthesis 직결 엔진)
+       2. 원어민 TTS (SpeechSynthesis 직결 엔진)
        ========================================================================== */
     let cachedVoices = [];
     function loadVoices() {
@@ -315,13 +314,11 @@
 
       const cleanText = text.trim();
 
-      // 기존 음성 큐 즉시 초기화 & 락 해제
       window.speechSynthesis.cancel();
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
       }
 
-      // 모바일 오디오 포커스 확보를 위해 0.05초 뒤 즉각 실행
       setTimeout(() => {
         try {
           const utter = new SpeechSynthesisUtterance(cleanText);
@@ -332,7 +329,6 @@
 
           if (cachedVoices.length === 0) loadVoices();
           
-          // 가장 자연스러운 미국식 영어 보이스 자동 매핑
           const targetVoice = cachedVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Samantha') || v.name.includes('Jenny') || v.name.includes('Ava'))) ||
                               cachedVoices.find(v => v.lang.startsWith('en-US')) ||
                               cachedVoices.find(v => v.lang.startsWith('en'));
@@ -340,7 +336,6 @@
 
           window.speechSynthesis.speak(utter);
 
-          // 브라우저 백그라운드 일시정지 상태 방어
           if (window.speechSynthesis.paused) {
             window.speechSynthesis.resume();
           }
@@ -359,13 +354,11 @@
     const BACKUP_QUESTIONS = [
       {
         kr: "나는 매일 아침 사과를 먹어요.",
-        en: "I eat an apple every morning.",
-        distractors: ["eats", "apples"]
+        en: "I eat an apple every morning."
       },
       {
         kr: "그 고양이는 침대 위에서 자고 있어요.",
-        en: "The cat is sleeping on the bed.",
-        distractors: ["sleep", "under"]
+        en: "The cat is sleeping on the bed."
       }
     ];
 
@@ -577,14 +570,12 @@
       setGameStage(2);
     });
 
-    // 💡 정답 보기 클릭 시: 100% 음성 직결 재생
     giveUpBtn.addEventListener('click', () => {
       unlockAudioSystem();
       setGameStage(3);
       revealAnswerDirectly();
     });
 
-    // 🔊 다시 듣기 버튼 클릭
     listenAgainBtn.addEventListener('click', () => {
       unlockAudioSystem();
       const q = questions[curIndex];
@@ -601,13 +592,12 @@
         assembledSlots.appendChild(blk);
       });
 
-      // 확실하게 즉시 영어 읽어주기
       speakText(q.en);
       nextBtn.style.display = "inline-flex";
     }
 
     /* ==========================================================================
-       6. 블록 조립 및 파싱 로직
+       6. 블록 조립 및 파싱 로직 (💡 오직 실제 정답 단어들로만 블록 구성)
        ========================================================================== */
     function tokenizeEnglish(sentence) {
       if (!sentence) return [];
@@ -653,8 +643,8 @@
       emptyGuideText.style.display = 'flex';
       wordPool.innerHTML = '';
 
-      const allTokens = [...q.tokens, ...q.distractors];
-      const shuffled = shuffleArray(allTokens);
+      // 💡 C열 방해 단어 배제: 오직 정답 토큰(q.tokens)만 섞어서 배치
+      const shuffled = shuffleArray(q.tokens);
 
       shuffled.forEach((word, i) => {
         const blk = makeBlockElement(word, i);
@@ -677,9 +667,6 @@
       el.innerHTML = `<span>${word}</span>`;
 
       el.addEventListener('click', () => {
-        unlockAudioSystem();
-        
-        // 정답 공개(3단계) 상태일 때 블록을 누르면 영어 문장 다시 읽기
         if (stage === 3) {
           speakText(questions[curIndex].en);
           return;
@@ -736,7 +723,6 @@
 
     clearBtn.addEventListener('click', () => {
       if (stage === 3) return;
-      unlockAudioSystem();
       sound.pop();
       const placed = Array.from(assembledSlots.querySelectorAll('.word-block'));
       placed.forEach(b => wordPool.appendChild(b));
@@ -744,7 +730,7 @@
     });
 
     /* ==========================================================================
-       7. 정답 판정 및 확실한 음성 출력 트리거 (+3 / +2)
+       7. 정답 판정 및 구글 시트 연동 게이지 보상 (+3 / +2)
        ========================================================================== */
     function onAnswerCorrect(gaugePoints) {
       unlockAudioSystem();
@@ -752,8 +738,6 @@
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
 
       addGauge(gaugePoints);
-      
-      // 정답 성공 시 즉시 원어민 발음 읽어주기!
       speakText(questions[curIndex].en);
 
       stage1Box.style.display = "none";
@@ -816,7 +800,7 @@
     }
 
     /* ==========================================================================
-       8. CSV 파서 & 시트 자동 연동 (Date.now 실시간 호출)
+       8. CSV 파서 & 시트 자동 연동 (A열: 한글, B열: 영어 문장만 추출)
        ========================================================================== */
     function parseCSV(text) {
       const rows = [];
@@ -865,14 +849,13 @@
         rows.forEach(r => {
           const kr = r[0] || '';
           const en = r[1] || '';
-          const dist = r[2] || '';
 
+          // A열(한글)과 B열(영어)만 정직하게 로드 (C열은 완전 무시)
           if (kr.trim() && en.trim()) {
             list.push({
               kr: kr.trim(),
               en: en.trim(),
-              tokens: tokenizeEnglish(en),
-              distractors: dist.split(/[,;\s]+/).map(s => s.trim()).filter(s => s.length > 0)
+              tokens: tokenizeEnglish(en)
             });
           }
         });
@@ -889,8 +872,7 @@
       questions = BACKUP_QUESTIONS.map(q => ({
         kr: q.kr,
         en: q.en,
-        tokens: tokenizeEnglish(q.en),
-        distractors: q.distractors
+        tokens: tokenizeEnglish(q.en)
       }));
       loadQuestion(0);
     }
