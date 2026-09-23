@@ -235,9 +235,27 @@
 
   <script>
     /* ==========================================================================
-       1. 효과음 합성기 (Web Audio API)
+       1. 효과음 및 브라우저 오디오 언락(Unlock) 시스템
        ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let isAudioUnlocked = false;
+
+    // 브라우저의 소리 차단 빗장을 완벽 해제하는 언락 함수
+    function unlockAudioSystem() {
+      if (isAudioUnlocked) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.resume();
+        const dummyUtter = new SpeechSynthesisUtterance('');
+        dummyUtter.volume = 0;
+        window.speechSynthesis.speak(dummyUtter);
+      }
+      isAudioUnlocked = true;
+    }
+    window.addEventListener('click', unlockAudioSystem, { once: true });
+    window.addEventListener('touchstart', unlockAudioSystem, { once: true });
 
     function playTone(freq, type = 'sine', duration = 0.15, delay = 0) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -278,7 +296,62 @@
     };
 
     /* ==========================================================================
-       2. 구글 스프레드시트 & 클라우드 실시간 연동 (매칭 게임과 완벽 공유)
+       2. 무조건 소리 나는 원어민 TTS (SpeechSynthesis 직결 엔진)
+       ========================================================================== */
+    let cachedVoices = [];
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        cachedVoices = window.speechSynthesis.getVoices();
+      }
+    }
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    function speakText(text) {
+      if (!text || !('speechSynthesis' in window)) return;
+      unlockAudioSystem();
+
+      const cleanText = text.trim();
+
+      // 기존 음성 큐 즉시 초기화 & 락 해제
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      // 모바일 오디오 포커스 확보를 위해 0.05초 뒤 즉각 실행
+      setTimeout(() => {
+        try {
+          const utter = new SpeechSynthesisUtterance(cleanText);
+          utter.lang = 'en-US';
+          utter.rate = 0.88;
+          utter.pitch = 1.0;
+          utter.volume = 1.0;
+
+          if (cachedVoices.length === 0) loadVoices();
+          
+          // 가장 자연스러운 미국식 영어 보이스 자동 매핑
+          const targetVoice = cachedVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Samantha') || v.name.includes('Jenny') || v.name.includes('Ava'))) ||
+                              cachedVoices.find(v => v.lang.startsWith('en-US')) ||
+                              cachedVoices.find(v => v.lang.startsWith('en'));
+          if (targetVoice) utter.voice = targetVoice;
+
+          window.speechSynthesis.speak(utter);
+
+          // 브라우저 백그라운드 일시정지 상태 방어
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+        } catch (e) {
+          console.error("TTS 에러:", e);
+        }
+      }, 50);
+    }
+
+    /* ==========================================================================
+       3. 구글 스프레드시트 & 클라우드 실시간 연동 (매칭 게임과 완벽 공유)
        ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
@@ -390,62 +463,6 @@
     }
 
     /* ==========================================================================
-       3. 100% 무조건 소리 나는 2중 오디오 엔진 (SpeechSynthesis + Audio Fallback)
-       ========================================================================== */
-    let ttsAudioPlayer = new Audio();
-
-    function speakText(text) {
-      if (!text) return;
-      const cleanText = text.trim();
-
-      // 1. 브라우저 내장 TTS 시도
-      let synthPlayed = false;
-      if ('speechSynthesis' in window) {
-        try {
-          window.speechSynthesis.cancel();
-          if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-
-          const utter = new SpeechSynthesisUtterance(cleanText);
-          utter.lang = 'en-US';
-          utter.rate = 0.9;
-          utter.pitch = 1.0;
-
-          const voices = window.speechSynthesis.getVoices();
-          const targetVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Samantha') || v.name.includes('Jenny') || v.name.includes('Ava'))) ||
-                              voices.find(v => v.lang.startsWith('en'));
-          if (targetVoice) utter.voice = targetVoice;
-
-          utter.onstart = () => { synthPlayed = true; };
-          utter.onerror = () => { fallbackAudioPlay(cleanText); };
-
-          window.speechSynthesis.speak(utter);
-          if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-        } catch (e) {
-          fallbackAudioPlay(cleanText);
-          return;
-        }
-      }
-
-      // 모바일 등에서 TTS가 말없이 묵음으로 씹혔을 때를 대비한 0.35초 안전 Fallback
-      setTimeout(() => {
-        if (!synthPlayed && ('speechSynthesis' in window && !window.speechSynthesis.speaking)) {
-          fallbackAudioPlay(cleanText);
-        }
-      }, 350);
-    }
-
-    function fallbackAudioPlay(text) {
-      try {
-        ttsAudioPlayer.pause();
-        const encoded = encodeURIComponent(text);
-        ttsAudioPlayer.src = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${encoded}`;
-        ttsAudioPlayer.play().catch(e => {
-          console.warn("오디오 재생 대기 상태 (화면 터치 필요):", e);
-        });
-      } catch (err) {}
-    }
-
-    /* ==========================================================================
        4. Web Speech STT (음성 인식 마이크)
        ========================================================================== */
     function cleanTextForCheck(str) {
@@ -489,6 +506,7 @@
     }
 
     function toggleSTT() {
+      unlockAudioSystem();
       if (!recognition) {
         alert("크롬(Chrome) 또는 엣지(Edge) 브라우저를 사용해 주세요!");
         return;
@@ -518,7 +536,7 @@
       const targetClean = cleanTextForCheck(q.en);
 
       if (spokenClean === targetClean) {
-        onAnswerCorrect(3); // 1단계 말하기 성공 시: 게이지 +3
+        onAnswerCorrect(3); // 말하기 성공 시 게이지 +3
       } else {
         sound.wrong();
       }
@@ -554,18 +572,21 @@
     }
 
     openBlockBtn.addEventListener('click', () => {
+      unlockAudioSystem();
       sound.hint();
       setGameStage(2);
     });
 
-    // 💡 정답 보기 클릭: 블록 완성 후 즉시 원어민 발음 재생!
+    // 💡 정답 보기 클릭 시: 100% 음성 직결 재생
     giveUpBtn.addEventListener('click', () => {
+      unlockAudioSystem();
       setGameStage(3);
       revealAnswerDirectly();
     });
 
-    // 🔊 다시 듣기 버튼 클릭: 언제든 영어 원어민 발음 재생
+    // 🔊 다시 듣기 버튼 클릭
     listenAgainBtn.addEventListener('click', () => {
+      unlockAudioSystem();
       const q = questions[curIndex];
       speakText(q.en);
     });
@@ -580,7 +601,7 @@
         assembledSlots.appendChild(blk);
       });
 
-      // 확실한 음성 출력
+      // 확실하게 즉시 영어 읽어주기
       speakText(q.en);
       nextBtn.style.display = "inline-flex";
     }
@@ -656,6 +677,8 @@
       el.innerHTML = `<span>${word}</span>`;
 
       el.addEventListener('click', () => {
+        unlockAudioSystem();
+        
         // 정답 공개(3단계) 상태일 때 블록을 누르면 영어 문장 다시 읽기
         if (stage === 3) {
           speakText(questions[curIndex].en);
@@ -678,6 +701,7 @@
 
       el.addEventListener('dragstart', (e) => {
         if (stage === 3) return;
+        unlockAudioSystem();
         sound.pop();
         el.classList.add('opacity-40');
         e.dataTransfer.setData('text/plain', el.getAttribute('data-uid'));
@@ -693,6 +717,7 @@
       zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
       zone.addEventListener('drop', (e) => {
         e.preventDefault();
+        unlockAudioSystem();
         zone.classList.remove('drag-over');
         const uid = e.dataTransfer.getData('text/plain');
         const blk = document.querySelector(`[data-uid="${uid}"]`);
@@ -711,6 +736,7 @@
 
     clearBtn.addEventListener('click', () => {
       if (stage === 3) return;
+      unlockAudioSystem();
       sound.pop();
       const placed = Array.from(assembledSlots.querySelectorAll('.word-block'));
       placed.forEach(b => wordPool.appendChild(b));
@@ -718,14 +744,17 @@
     });
 
     /* ==========================================================================
-       7. 정답 판정 및 구글 시트 연동 게이지 보상 (+3 / +2)
+       7. 정답 판정 및 확실한 음성 출력 트리거 (+3 / +2)
        ========================================================================== */
     function onAnswerCorrect(gaugePoints) {
+      unlockAudioSystem();
       sound.success();
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
 
       addGauge(gaugePoints);
-      speakText(questions[curIndex].en); // 정답 시 원어민 발음 읽어주기
+      
+      // 정답 성공 시 즉시 원어민 발음 읽어주기!
+      speakText(questions[curIndex].en);
 
       stage1Box.style.display = "none";
       checkBlockBtn.style.display = "none";
@@ -736,6 +765,7 @@
     }
 
     checkBlockBtn.addEventListener('click', () => {
+      unlockAudioSystem();
       const q = questions[curIndex];
       const placed = Array.from(assembledSlots.querySelectorAll('.word-block')).map(b => b.getAttribute('data-word'));
 
@@ -747,7 +777,7 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(2); // 2단계 블록 완성 정답 시: 게이지 +2
+        onAnswerCorrect(2); // 블록 조립 정답: 게이지 +2
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
@@ -756,6 +786,7 @@
     });
 
     nextBtn.addEventListener('click', () => {
+      unlockAudioSystem();
       sound.pop();
       loadQuestion(curIndex + 1);
     });
