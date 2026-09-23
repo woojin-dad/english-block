@@ -14,11 +14,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jua&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
   
   <style>
+    /* 🌿 확실하고 편안한 네이버 그린 배경 강제 적용 */
     body {
       font-family: 'Jua', 'Fredoka', cursive, sans-serif;
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
+      background: linear-gradient(180deg, #dcfce7 0%, #eafaf1 40%, #d1fae5 100%) !important;
+      min-height: 100vh;
     }
 
     .font-english {
@@ -54,12 +57,12 @@
       min-height: 85px;
       border: 3px dashed #86efac;
       border-radius: 1.5rem;
-      background: linear-gradient(135deg, rgba(240, 253, 244, 0.85), rgba(236, 253, 245, 0.75));
+      background: linear-gradient(135deg, rgba(240, 253, 244, 0.9), rgba(236, 253, 245, 0.8));
     }
 
     .block-slot-zone.drag-over {
       border-color: #03c75a;
-      background-color: #dcfce7;
+      background-color: #bbf7d0;
       transform: scale(1.01);
     }
 
@@ -85,20 +88,20 @@
     }
   </style>
 </head>
-<body class="bg-gradient-to-b from-emerald-100 via-green-50 to-teal-100 min-h-screen flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 selection:bg-emerald-200">
+<body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 selection:bg-emerald-200">
 
   <!-- Header Section -->
-  <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border-2 border-emerald-100 gap-3 mb-3">
+  <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border-2 border-emerald-200 gap-3 mb-3">
     <div class="flex items-center gap-3">
-      <div class="w-12 h-12 bg-emerald-400 rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-emerald-500 text-white">
+      <div class="w-12 h-12 bg-[#03c75a] rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-emerald-600 text-white">
         🦁
       </div>
       <div>
         <h1 class="text-xl sm:text-2xl font-black text-emerald-950 tracking-wide flex items-center gap-1.5">
           블록 스피킹 원정대
-          <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full uppercase tracking-wider font-english font-bold">Step</span>
+          <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-english font-bold">Step</span>
         </h1>
-        <p class="text-xs text-slate-500 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
+        <p class="text-xs text-emerald-700 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
       </div>
     </div>
 
@@ -124,7 +127,7 @@
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
     <!-- Question Card -->
-    <div class="bg-white rounded-3xl p-5 sm:p-7 shadow-xl border-4 border-white/80 relative overflow-hidden">
+    <div class="bg-white rounded-3xl p-5 sm:p-7 shadow-xl border-4 border-emerald-100/90 relative overflow-hidden">
       <div class="flex justify-between items-center mb-2">
         <div class="flex items-center gap-2 text-sm">
           <span class="bg-emerald-100 text-emerald-800 font-black px-3 py-1 rounded-xl text-xs sm:text-sm" id="questionBadge">문제 1 / 1</span>
@@ -148,14 +151,14 @@
         <div id="mascotReaction" class="text-3xl sm:text-4xl transition-all duration-300">
           🐱
         </div>
-        <div id="speechBubble" class="ml-2.5 text-xs sm:text-sm bg-emerald-50 text-emerald-900 border border-emerald-200 px-3.5 py-1.5 rounded-2xl font-bold max-w-xs sm:max-w-md">
+        <div id="speechBubble" class="ml-2.5 text-xs sm:text-sm bg-emerald-50 text-emerald-950 border border-emerald-200 px-3.5 py-1.5 rounded-2xl font-bold max-w-xs sm:max-w-md">
           마이크 버튼을 누르고 영어로 말해봐!
         </div>
       </div>
     </div>
 
     <!-- 1단계: 스피킹 단독 영역 -->
-    <div id="speakingChallengeZone" class="bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-10 shadow-xl border-2 border-emerald-100 flex flex-col items-center justify-center text-center gap-4">
+    <div id="speakingChallengeZone" class="bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-10 shadow-xl border-2 border-emerald-200 flex flex-col items-center justify-center text-center gap-4">
       <p class="text-base sm:text-lg font-black text-emerald-950">
         머릿속으로 영어가 떠올랐나요?
       </p>
@@ -166,7 +169,7 @@
       </button>
 
       <!-- 모르면 단어 블록 보기 버튼 -->
-      <button id="showBlocksBtn" class="mt-3 text-sm text-emerald-800 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-5 py-2.5 rounded-2xl border-2 border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
+      <button id="showBlocksBtn" class="mt-3 text-sm text-emerald-900 hover:text-emerald-950 bg-emerald-100 hover:bg-emerald-200 px-5 py-2.5 rounded-2xl border-2 border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
         <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
     </div>
@@ -174,7 +177,7 @@
     <!-- 2단계: 블록 조립 영역 (처음에는 숨김) -->
     <div id="blockAssemblyContainer" style="display: none;" class="flex flex-col gap-3.5">
       <!-- Assembled Sentence Box -->
-      <div class="bg-white/90 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-emerald-100">
+      <div class="bg-white/90 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-emerald-200">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
             <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
@@ -196,7 +199,7 @@
       </div>
 
       <!-- Word Bank Pool -->
-      <div class="bg-white/95 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-xl border-2 border-emerald-100">
+      <div class="bg-white/95 backdrop-blur rounded-3xl p-4 sm:p-5 shadow-xl border-2 border-emerald-200">
         <div class="flex items-center justify-between mb-2.5">
           <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
             <span>📦</span> 단어 블록 보관함
@@ -212,23 +215,19 @@
 
     <!-- Action Bar -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
-      <!-- 2단계에서 블록을 보고 다시 말해보고 싶을 때 -->
       <button id="secondaryMicBtn" style="display: none;" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm sm:text-base px-4 sm:px-5 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span class="text-lg">🎤</span>
         <span>다시 말하기</span>
       </button>
 
-      <!-- 2단계 블록 확인 버튼 -->
       <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#02b350] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
       </button>
 
-      <!-- 3단계: 도저히 모를 때 정답 보기 버튼 -->
       <button id="giveUpBtn" style="display: none;" class="toy-btn bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-sm sm:text-base px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>💡 정답 보기</span>
       </button>
 
-      <!-- 다음 문제 버튼 -->
       <button id="nextBtn" style="display: none;" class="toy-btn bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base sm:text-lg px-8 sm:px-12 py-3 rounded-2xl flex items-center gap-2 animate-pulse shadow-md">
         <span>다음 문제 ➡️</span>
       </button>
@@ -913,8 +912,8 @@
       blockAssemblyContainer.style.display = "flex";
       assembledZoneEl.innerHTML = `
         <div class="w-full py-8 text-center">
-          <p class="text-2xl font-black text-emerald-900 mb-2">당신은 최고의 스피킹 탐험가! 🏆</p>
-          <p class="text-slate-500 mb-4 font-sans">누적 획득 코인: ${coins.toLocaleString()}개 🪙</p>
+          <p class="text-2xl font-black text-emerald-950 mb-2">당신은 최고의 스피킹 탐험가! 🏆</p>
+          <p class="text-emerald-700 mb-4 font-sans">누적 획득 코인: ${coins.toLocaleString()}개 🪙</p>
           <button onclick="loadQuestion(0)" class="toy-btn bg-[#03c75a] text-white font-bold text-lg px-8 py-3 rounded-2xl">
             처음부터 다시 도전하기 🚀
           </button>
@@ -943,7 +942,7 @@
       if (sheetData && sheetData.length > 0) {
         questions = sheetData;
         dataSourceBadgeEl.textContent = "구글 시트 연동됨";
-        dataSourceBadgeEl.className = "text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200";
+        dataSourceBadgeEl.className = "text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200";
         speechBubbleEl.textContent = `구글 시트에서 ${questions.length}개의 문장을 가져왔어요! ✨`;
         loadQuestion(0);
       } else {
