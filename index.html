@@ -89,7 +89,6 @@
       animation: shakeMotion 0.35s ease;
     }
 
-    /* 🎙️ 1. 대기 모드: 부드러운 잔잔한 펄스 */
     @keyframes micIdleGlow {
       0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
       70% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
@@ -101,7 +100,6 @@
       border-color: #b91c1c !important;
     }
 
-    /* 🎙️ 2. 음성 감지 시 동적 스타일링 */
     #mainMicBtn {
       transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, background-color 0.2s;
     }
@@ -109,7 +107,6 @@
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6">
 
-  <!-- 헤더 영역 -->
   <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border border-emerald-300 gap-3 mb-3">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 bg-amber-300 rounded-2xl flex items-center justify-center text-3xl shadow-inner border-2 border-amber-400">
@@ -123,7 +120,6 @@
       </div>
     </div>
 
-    <!-- ⚡ 매칭게임 구글 시트 연동 게이지 & 🎁 선물 상자 -->
     <div class="flex items-center gap-2 sm:gap-3 ml-auto bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-inner">
       <span class="text-lg">⚡</span>
       <div class="gauge-bg">
@@ -136,10 +132,8 @@
     </div>
   </header>
 
-  <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 우측 상단에 정답률 백분율 배지 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 --%
@@ -150,7 +144,6 @@
       </div>
     </div>
 
-    <!-- 2번 박스 (1단계): 실시간 음량 반응 마이크 버튼 -->
     <div id="stage1Box" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-4">
       <p id="stage1TipText" class="text-base sm:text-lg font-black text-slate-800">
         머릿속으로 영어가 떠올랐나요?
@@ -161,13 +154,11 @@
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
-      <!-- 2단계 진입 버튼 -->
       <button id="openBlockBtn" class="mt-3 text-sm text-[#029f48] hover:text-[#02833b] bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-2xl border border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
         <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
     </div>
 
-    <!-- 3번 박스 (2단계): 블록 조립 컨테이너 -->
     <div id="stage2Box" style="display: none;" class="flex flex-col gap-3.5">
       <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
         <div class="flex items-center justify-between mb-2">
@@ -202,7 +193,6 @@
       </div>
     </div>
 
-    <!-- 하단 컨트롤 버튼 바 -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
       <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
@@ -223,9 +213,6 @@
   </main>
 
   <script>
-    /* ==========================================================================
-       1. 효과음 및 오디오 언락 시스템
-       ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let isAudioUnlocked = false;
 
@@ -281,9 +268,6 @@
       }
     };
 
-    /* ==========================================================================
-       2. 원어민 TTS
-       ========================================================================== */
     let cachedVoices = [];
     function loadVoices() {
       if ('speechSynthesis' in window) cachedVoices = window.speechSynthesis.getVoices();
@@ -320,9 +304,6 @@
       }, 50);
     }
 
-    /* ==========================================================================
-       3. 구글 스프레드시트 & 클라우드 연동
-       ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
 
@@ -357,7 +338,6 @@
     let isRecording = false;
     let recognition = null;
 
-    // 실시간 볼륨 감지용 변수
     let mediaStream = null;
     let audioMeterCtx = null;
     let analyser = null;
@@ -498,9 +478,6 @@
       return str.toLowerCase().replace(/[.,!?;:'"()\-]/g, '').replace(/\s+/g, ' ').trim();
     }
 
-    /* ==========================================================================
-       🎤 4. 실시간 음성(볼륨) 감지 비주얼라이저
-       ========================================================================== */
     async function startVoiceVisualizer() {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
@@ -520,19 +497,16 @@
           if (!isRecording) return;
           analyser.getByteFrequencyData(dataArray);
 
-          // 볼륨 RMS 계산
           let sum = 0;
           for (let i = 0; i < dataArray.length; i++) {
             sum += dataArray[i] * dataArray[i];
           }
-          const rms = Math.sqrt(sum / dataArray.length); // 0 ~ 128 정도
-          const volume = Math.min(Math.max((rms - 10) / 45, 0), 1); // 0 ~ 1 정규화
+          const rms = Math.sqrt(sum / dataArray.length);
+          const volume = Math.min(Math.max((rms - 10) / 45, 0), 1);
 
-          // 목소리가 감지될 때 타이밍 효과 적용!
           if (volume > 0.08) {
-            // 말하는 타이밍: 목소리 크기에 따라 버튼과 링이 쾅쾅 터짐
-            const scale = 1.05 + (volume * 0.18); // 1.05 ~ 1.23 배
-            const glowSpread = Math.round(10 + volume * 35); // 10px ~ 45px
+            const scale = 1.05 + (volume * 0.18);
+            const glowSpread = Math.round(10 + volume * 35);
             const glowAlpha = (0.5 + volume * 0.5).toFixed(2);
             
             mainMicBtn.style.transform = `scale(${scale.toFixed(3)})`;
@@ -540,7 +514,6 @@
             mainMicIcon.style.transform = `scale(${(1 + volume * 0.35).toFixed(2)})`;
             mainMicBtn.classList.remove('mic-idle');
           } else {
-            // 말을 안 하고 숨죽여 듣고 있을 때: 부드러운 대기 효과
             mainMicBtn.style.transform = 'scale(1.05)';
             mainMicBtn.style.boxShadow = '';
             mainMicIcon.style.transform = 'scale(1)';
@@ -554,7 +527,7 @@
 
         checkVolume();
       } catch (err) {
-        console.warn("오디오 볼륨 분석기 초기화 생략 (기본 모드로 진행):", err);
+        console.warn("오디오 볼륨 분석기 초기화 생략:", err);
       }
     }
 
@@ -572,9 +545,6 @@
       mainMicIcon.style.transform = 'scale(1)';
     }
 
-    /* ==========================================================================
-       5. Web Speech STT (음성 인식)
-       ========================================================================== */
     function initSTT() {
       const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechClass) {
@@ -594,7 +564,7 @@
         mainMicBtn.classList.add('mic-idle');
         mainMicIcon.textContent = "🛑";
         mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
-        startVoiceVisualizer(); // 실시간 목소리 감지 시작!
+        startVoiceVisualizer();
       };
 
       recognition.onresult = (e) => {
@@ -643,9 +613,6 @@
       }
     }
 
-    /* ==========================================================================
-       6. 단계 컨트롤
-       ========================================================================== */
     function setGameStage(newStage) {
       stage = newStage;
       if (stage === 1) {
@@ -703,10 +670,13 @@
       nextBtn.style.display = "inline-flex";
     }
 
+    /* 💡 마침표(.), 물음표(?), 느낌표(!) 완벽 제거 + 단어 꼬리 점까지 이중 필터링 */
     function tokenizeEnglish(sentence) {
       if (!sentence) return [];
-      const trimmed = sentence.trim().replace(/[.!?]+$/, '');
-      const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+      let clean = sentence.trim().replace(/[.!?\s]+$/, '');
+      const words = clean.split(/\s+/).map(w => {
+        return w.replace(/[.!?]+$/, '');
+      }).filter(w => w.length > 0);
       return words;
     }
 
