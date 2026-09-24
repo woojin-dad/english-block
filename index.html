@@ -89,19 +89,16 @@
       animation: shakeMotion 0.35s ease;
     }
 
-    @keyframes micIdleGlow {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
-      70% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    /* 🎙️ 마이크 인식 중 펄스 및 음파 애니메이션 */
+    @keyframes micPulseRing {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1.05); }
+      50% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); transform: scale(1.08); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1.05); }
     }
-    .mic-idle {
-      animation: micIdleGlow 1.5s infinite ease-out;
+    .mic-recording {
+      animation: micPulseRing 1.3s infinite ease-in-out !important;
       background-color: #ef4444 !important;
       border-color: #b91c1c !important;
-    }
-
-    #mainMicBtn {
-      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, background-color 0.2s;
     }
   </style>
 </head>
@@ -148,14 +145,14 @@
       </div>
     </div>
 
-    <!-- 2번 박스 (1단계): 스피킹 단독 영역 -->
+    <!-- 2번 박스 (1단계): 스피킹 영역 -->
     <div id="stage1Box" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-4">
       <p id="stage1TipText" class="text-base sm:text-lg font-black text-slate-800">
         머릿속으로 영어가 떠올랐나요?
       </p>
 
-      <button id="mainMicBtn" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-black text-lg sm:text-xl px-10 sm:px-14 py-4 rounded-3xl flex items-center gap-3 shadow-md scale-105">
-        <span id="mainMicIcon" class="text-3xl transition-transform duration-75">🎤</span>
+      <button id="mainMicBtn" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-black text-lg sm:text-xl px-10 sm:px-14 py-4 rounded-3xl flex items-center gap-3 shadow-md scale-105 transition-all">
+        <span id="mainMicIcon" class="text-3xl">🎤</span>
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
@@ -280,7 +277,7 @@
     };
 
     /* ==========================================================================
-       🔊 2. 맥북 & 아이패드 고품질 원어민 TTS 전용 엔진
+       🔊 2. 맥북 & 아이패드 100% 동작 고품질 TTS 엔진
        ========================================================================== */
     let availableVoices = [];
 
@@ -298,18 +295,16 @@
     function getBestEnglishVoice() {
       if (availableVoices.length === 0) updateVoiceList();
       
-      // 1순위: 프리미엄/내추럴 고품질 원어민 음성 (Google US English, Samantha Enhanced, Ava, Jenny 등)
+      // 구글 및 애플의 최고급 내추럴 보이스 우선 선택
       const premiumVoice = availableVoices.find(v => 
         v.lang.startsWith('en') && 
-        (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Enhanced') || v.name.includes('Samantha') || v.name.includes('Ava') || v.name.includes('Nicky'))
+        (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Enhanced') || v.name.includes('Samantha') || v.name.includes('Ava') || v.name.includes('Nicky') || v.name.includes('Allison'))
       );
       if (premiumVoice) return premiumVoice;
 
-      // 2순위: 미국 영어 (en-US)
       const usVoice = availableVoices.find(v => v.lang === 'en-US' || v.lang === 'en_US');
       if (usVoice) return usVoice;
 
-      // 3순위: 기타 영어
       return availableVoices.find(v => v.lang.startsWith('en'));
     }
 
@@ -319,24 +314,24 @@
 
       const cleanText = text.trim();
 
-      // Safari/iOS 멈춤 방지를 위한 확실한 리셋
+      // 맥북/아이패드 멈춤 버그 방어: 이전 큐 즉시 초기화
       window.speechSynthesis.cancel();
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
+      window.speechSynthesis.resume();
 
-      const utter = new SpeechSynthesisUtterance(cleanText);
-      utter.lang = 'en-US';
-      utter.rate = 0.88;  // 학습에 가장 듣기 편한 속도
-      utter.pitch = 1.0;
-      utter.volume = 1.0;
+      setTimeout(() => {
+        const utter = new SpeechSynthesisUtterance(cleanText);
+        utter.lang = 'en-US';
+        utter.rate = 0.88;
+        utter.pitch = 1.0;
+        utter.volume = 1.0;
 
-      const targetVoice = getBestEnglishVoice();
-      if (targetVoice) {
-        utter.voice = targetVoice;
-      }
+        const targetVoice = getBestEnglishVoice();
+        if (targetVoice) {
+          utter.voice = targetVoice;
+        }
 
-      window.speechSynthesis.speak(utter);
+        window.speechSynthesis.speak(utter);
+      }, 10);
     }
 
     /* ==========================================================================
@@ -375,11 +370,6 @@
     let stage = 1;
     let isRecording = false;
     let recognition = null;
-
-    let mediaStream = null;
-    let audioMeterCtx = null;
-    let analyser = null;
-    let volumeVisualTimer = null;
 
     const gaugeFill = document.getElementById('gaugeFill');
     const giftCount = document.getElementById('giftCount');
@@ -517,77 +507,7 @@
     }
 
     /* ==========================================================================
-       4. 실시간 음성 감지 비주얼라이저
-       ========================================================================== */
-    async function startVoiceVisualizer() {
-      try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-
-        audioMeterCtx = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioMeterCtx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.4;
-
-        const source = audioMeterCtx.createMediaStreamSource(mediaStream);
-        source.connect(analyser);
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-        function checkVolume() {
-          if (!isRecording) return;
-          analyser.getByteFrequencyData(dataArray);
-
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i] * dataArray[i];
-          }
-          const rms = Math.sqrt(sum / dataArray.length);
-          const volume = Math.min(Math.max((rms - 10) / 45, 0), 1);
-
-          if (volume > 0.08) {
-            const scale = 1.05 + (volume * 0.18);
-            const glowSpread = Math.round(10 + volume * 35);
-            const glowAlpha = (0.5 + volume * 0.5).toFixed(2);
-            
-            mainMicBtn.style.transform = `scale(${scale.toFixed(3)})`;
-            mainMicBtn.style.boxShadow = `0 0 0 ${glowSpread}px rgba(255, 75, 75, ${glowAlpha}), 0 6px 20px rgba(0,0,0,0.25)`;
-            mainMicIcon.style.transform = `scale(${(1 + volume * 0.35).toFixed(2)})`;
-            mainMicBtn.classList.remove('mic-idle');
-          } else {
-            mainMicBtn.style.transform = 'scale(1.05)';
-            mainMicBtn.style.boxShadow = '';
-            mainMicIcon.style.transform = 'scale(1)';
-            if (!mainMicBtn.classList.contains('mic-idle')) {
-              mainMicBtn.classList.add('mic-idle');
-            }
-          }
-
-          volumeVisualTimer = requestAnimationFrame(checkVolume);
-        }
-
-        checkVolume();
-      } catch (err) {
-        console.warn("오디오 볼륨 분석기 초기화 생략:", err);
-      }
-    }
-
-    function stopVoiceVisualizer() {
-      if (volumeVisualTimer) cancelAnimationFrame(volumeVisualTimer);
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-        mediaStream = null;
-      }
-      if (audioMeterCtx && audioMeterCtx.state !== 'closed') {
-        audioMeterCtx.close();
-      }
-      mainMicBtn.style.transform = 'scale(1.05)';
-      mainMicBtn.style.boxShadow = '';
-      mainMicIcon.style.transform = 'scale(1)';
-    }
-
-    /* ==========================================================================
-       5. Web Speech STT
+       4. Web Speech STT (충돌 없는 순수 모드)
        ========================================================================== */
     function initSTT() {
       const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -605,10 +525,9 @@
       recognition.onstart = () => {
         isRecording = true;
         sound.mic();
-        mainMicBtn.classList.add('mic-idle');
+        mainMicBtn.classList.add('mic-recording');
         mainMicIcon.textContent = "🛑";
         mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
-        startVoiceVisualizer();
       };
 
       recognition.onresult = (e) => {
@@ -636,8 +555,7 @@
 
     function stopSTT() {
       isRecording = false;
-      stopVoiceVisualizer();
-      mainMicBtn.classList.remove('mic-idle');
+      mainMicBtn.classList.remove('mic-recording');
       mainMicIcon.textContent = "🎤";
       mainMicLabel.textContent = "마이크 누르고 말하기";
     }
@@ -658,7 +576,7 @@
     }
 
     /* ==========================================================================
-       6. 단계 컨트롤
+       5. 단계 컨트롤
        ========================================================================== */
     function setGameStage(newStage) {
       stage = newStage;
