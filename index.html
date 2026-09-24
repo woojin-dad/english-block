@@ -144,10 +144,10 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 우측 상단에 문장별 정답률 백분율(%) 뱃지 탑재 -->
+    <!-- 1번 박스: 우측 상단에 정답률 백분율 배지 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
       
-      <!-- 🎯 정답률 백분율 배지 (우측 상단) -->
+      <!-- 🎯 정답률 백분율 배지 -->
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 --%
       </div>
@@ -168,7 +168,7 @@
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
-      <!-- 2단계 진입 버튼 (누르는 순간 해당 문장 오답 카운트 기록) -->
+      <!-- 2단계 진입 버튼 -->
       <button id="openBlockBtn" class="mt-3 text-sm text-[#029f48] hover:text-[#02833b] bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-2xl border border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
         <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
@@ -236,7 +236,7 @@
 
   <script>
     /* ==========================================================================
-       1. 오디오 언락 & 효과음 시스템
+       1. 효과음 및 브라우저 오디오 언락(Unlock) 시스템
        ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let isAudioUnlocked = false;
@@ -375,7 +375,6 @@
     let questions = [];
     let curIndex = 0;
     
-    // 매칭 게임과 공유되는 클라우드 상태
     let cloudState = {
       coins: 0,
       totalMatchedCount: 0,
@@ -383,9 +382,9 @@
       maxGauge: 500
     };
 
-    // 🎯 문장별 정답률 데이터베이스 (로컬 스토리지 보존)
+    // 🎯 문장별 정답률 DB
     let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
-    let isCurrentTrialRecorded = false; // 한 문제당 1회만 카운트하기 위한 안전 플래그
+    let isCurrentTrialRecorded = false;
 
     let stage = 1;
     let isRecording = false;
@@ -462,7 +461,7 @@
     }
 
     /* ==========================================================================
-       🎯 문장별 정답률 백분율 업데이트 및 표시 함수
+       🎯 문장별 정답률 백분율 UI & 기록 함수
        ========================================================================== */
     function updateAccuracyBadgeUI(enSentence) {
       const stat = sentenceStatsDB[enSentence];
@@ -476,19 +475,16 @@
       accuracyBadge.textContent = `🎯 ${rate}%`;
 
       if (rate >= 80) {
-        // 🟢 80% 이상: 완벽 적응 (초록)
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-emerald-100 text-[#02833b] border-[#a7f3d0]";
       } else if (rate >= 50) {
-        // 🟡 50% ~ 79%: 연습 중 (노랑/주황)
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-amber-100 text-amber-800 border-amber-300";
       } else {
-        // 🔴 50% 미만: 집중 필요 (빨강)
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-rose-100 text-rose-700 border-rose-300";
       }
     }
 
     function recordSentenceResult(isSuccess) {
-      if (isCurrentTrialRecorded) return; // 이번 문제에서 이미 시도 기록을 남겼다면 중복 방지
+      if (isCurrentTrialRecorded) return;
       isCurrentTrialRecorded = true;
 
       const q = questions[curIndex];
@@ -505,6 +501,47 @@
 
       localStorage.setItem('block_sentence_stats', JSON.stringify(sentenceStatsDB));
       updateAccuracyBadgeUI(q.en);
+    }
+
+    /* ==========================================================================
+       📊 스마트 정렬: 취약한 문장(정답률 낮은 순) 우선 등장 알고리즘
+       ========================================================================== */
+    function sortQuestionsByAccuracy(list) {
+      return list.sort((a, b) => {
+        const statA = sentenceStatsDB[a.en];
+        const statB = sentenceStatsDB[b.en];
+
+        const rateA = statA && statA.trials > 0 ? (statA.hits / statA.trials) * 100 : -1;
+        const rateB = statB && statB.trials > 0 ? (statB.hits / statB.trials) * 100 : -1;
+
+        // 우선순위 가중치:
+        // 0% ~ 99% (틀린 적 있는 취약 문장) -> 가중치 1 (가장 앞)
+        // -1 (아직 안 푼 NEW 문장)         -> 가중치 2 (중간 진도)
+        // 100% (완전 마스터 문장)          -> 가중치 3 (가장 뒤)
+        const getPriorityTier = (rate) => {
+          if (rate >= 0 && rate < 100) return 1; // 취약 문장
+          if (rate === -1) return 2;             // 신규 문장 (NEW)
+          return 3;                              // 마스터 문장 (100%)
+        };
+
+        const tierA = getPriorityTier(rateA);
+        const tierB = getPriorityTier(rateB);
+
+        if (tierA !== tierB) {
+          return tierA - tierB;
+        }
+
+        // 같은 취약 문장 구간(0~99%)끼리는 정답률이 낮은 순으로 정렬
+        if (tierA === 1) {
+          if (rateA !== rateB) {
+            return rateA - rateB; // 정답률 오름차순 (낮은 순)
+          }
+          // 정답률까지 같다면 시도 횟수(trials)가 많은 문장이 더 어려워하는 것이므로 앞 배치
+          return (statB.trials || 0) - (statA.trials || 0);
+        }
+
+        return 0; // 원본 순서 유지
+      });
     }
 
     /* ==========================================================================
@@ -578,8 +615,8 @@
       const targetClean = cleanTextForCheck(q.en);
 
       if (spokenClean === targetClean) {
-        recordSentenceResult(true); // 🟢 1단계 말하기 성공 시: 정답(+1) 기록
-        onAnswerCorrect(3);         // 게이지 +3
+        recordSentenceResult(true);
+        onAnswerCorrect(3);
       } else {
         sound.wrong();
       }
@@ -611,11 +648,10 @@
       }
     }
 
-    // 💡 1단계에서 [단어 블록 보기] 버튼을 누르는 순간: 오답 처리(시도+1, 성공+0)
     openBlockBtn.addEventListener('click', () => {
       unlockAudioSystem();
       sound.hint();
-      recordSentenceResult(false); // 🔴 블록 힌트 사용 시 오답으로 1회 기록
+      recordSentenceResult(false);
       setGameStage(2);
     });
 
@@ -647,7 +683,7 @@
     }
 
     /* ==========================================================================
-       6. 블록 조립 및 파싱 로직 (정답 단어만 생성)
+       6. 블록 조립 및 로딩 로직
        ========================================================================== */
     function tokenizeEnglish(sentence) {
       if (!sentence) return [];
@@ -682,14 +718,13 @@
       }
 
       curIndex = idx;
-      isCurrentTrialRecorded = false; // 새 문제 시작 시 시도 기록 플래그 초기화
+      isCurrentTrialRecorded = false;
       nextBtn.style.display = "none";
       listenAgainBtn.style.display = "none";
 
       const q = questions[curIndex];
       koreanSentence.textContent = q.kr;
 
-      // 해당 문장의 누적 정답률 백분율 표시
       updateAccuracyBadgeUI(q.en);
 
       assembledSlots.innerHTML = '';
@@ -814,7 +849,7 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(2); // 2단계 블록 조립 정답: 게이지 +2
+        onAnswerCorrect(2);
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
@@ -839,8 +874,8 @@
         <div class="w-full py-8 text-center">
           <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 스피킹 탐험가! 🏆</p>
           <p class="text-slate-500 mb-4 font-sans">누적 선물: ${cloudState.giftCount}개 🎁</p>
-          <button onclick="loadQuestion(0)" class="toy-btn bg-[#03c75a] text-white font-bold text-lg px-8 py-3 rounded-2xl">
-            처음부터 다시 도전하기 🚀
+          <button onclick="restartGameWithResort()" class="toy-btn bg-[#03c75a] text-white font-bold text-lg px-8 py-3 rounded-2xl">
+            약점 문장부터 다시 도전하기 🚀
           </button>
         </div>
       `;
@@ -851,8 +886,13 @@
       nextBtn.style.display = "none";
     }
 
+    function restartGameWithResort() {
+      questions = sortQuestionsByAccuracy([...questions]);
+      loadQuestion(0);
+    }
+
     /* ==========================================================================
-       8. CSV 파서 & 시트 자동 연동 (Date.now 실시간 호출)
+       8. CSV 파서 & 시트 자동 연동 (스마트 정렬 연동)
        ========================================================================== */
     function parseCSV(text) {
       const rows = [];
@@ -912,7 +952,8 @@
         });
 
         if (list.length > 0) {
-          questions = list;
+          // 💡 정답률 낮은 순(취약 문장 우선)으로 스마트 정렬 후 게임 시작!
+          questions = sortQuestionsByAccuracy(list);
           loadQuestion(0);
           return;
         }
@@ -920,11 +961,11 @@
         console.warn("시트 가져오기 실패, 기본 문장 사용:", e);
       }
 
-      questions = BACKUP_QUESTIONS.map(q => ({
+      questions = sortQuestionsByAccuracy(BACKUP_QUESTIONS.map(q => ({
         kr: q.kr,
         en: q.en,
         tokens: tokenizeEnglish(q.en)
-      }));
+      })));
       loadQuestion(0);
     }
 
