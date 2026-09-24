@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>블럭 스피킹 원정대 🧩🎤</title>
+  <title>블록 스피킹 원정대 🧩🎤</title>
   
   <!-- Tailwind CSS & Confetti -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -45,7 +45,7 @@
       box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
     }
 
-    /* 단어 블럭 스타일 */
+    /* 단어 블록 스타일 */
     .word-block {
       transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
       box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
@@ -116,15 +116,15 @@
   <!-- 헤더 영역 -->
   <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border border-emerald-300 gap-3 mb-3">
     <div class="flex items-center gap-3">
-      <!-- 🧩 블럭 아이콘 -->
+      <!-- 🧩 블록 아이콘 -->
       <div class="w-12 h-12 bg-amber-300 rounded-2xl flex items-center justify-center text-3xl shadow-inner border-2 border-amber-400">
         🧩
       </div>
       <div>
         <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide">
-          블럭 스피킹 원정대
+          블록 스피킹 원정대
         </h1>
-        <p class="text-xs text-slate-500 font-sans">입으로 먼저 말해보고, 모르면 블럭 힌트!</p>
+        <p class="text-xs text-slate-500 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
       </div>
     </div>
 
@@ -144,9 +144,15 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 오직 문제 제목만 정중앙에 단독 배치 -->
-    <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex items-center justify-center min-h-[130px]">
-      <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug">
+    <!-- 1번 박스: 우측 상단에 문장별 정답률 백분율(%) 뱃지 탑재 -->
+    <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
+      
+      <!-- 🎯 정답률 백분율 배지 (우측 상단) -->
+      <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
+        🎯 --%
+      </div>
+
+      <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug px-4">
         문장을 불러오는 중입니다... 🧩
       </div>
     </div>
@@ -162,13 +168,13 @@
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
-      <!-- 2단계 진입 버튼 -->
+      <!-- 2단계 진입 버튼 (누르는 순간 해당 문장 오답 카운트 기록) -->
       <button id="openBlockBtn" class="mt-3 text-sm text-[#029f48] hover:text-[#02833b] bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-2xl border border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
-        <span>🧩 잘 모르겠어요 (단어 블럭 보기)</span>
+        <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
     </div>
 
-    <!-- 3번 박스 (2단계): 블럭 조립 컨테이너 (초기 숨김) -->
+    <!-- 3번 박스 (2단계): 블록 조립 컨테이너 (초기 숨김) -->
     <div id="stage2Box" style="display: none;" class="flex flex-col gap-3.5">
       <!-- 내가 만든 문장 박스 -->
       <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
@@ -177,7 +183,7 @@
             <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
               <span>🎯</span> 내가 만든 문장
             </span>
-            <span class="text-xs text-slate-400 font-sans hidden sm:inline">(블럭을 누르면 보관함으로 돌아갑니다)</span>
+            <span class="text-xs text-slate-400 font-sans hidden sm:inline">(블록을 누르면 보관함으로 돌아갑니다)</span>
           </div>
           <button id="clearBtn" class="text-xs text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-xl transition flex items-center gap-1">
             <span>🔄</span> 비우기
@@ -187,7 +193,7 @@
         <div id="assembledSlots" class="slot-zone p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-3 transition-colors duration-200">
           <div id="emptyGuideText" class="w-full text-center text-slate-400 text-xs sm:text-sm py-4 flex flex-col items-center justify-center pointer-events-none">
             <span class="text-2xl mb-1">👇</span>
-            <span>아래 단어 블럭을 클릭해서 문장을 완성해보세요!</span>
+            <span>아래 단어 블록을 클릭해서 문장을 완성해보세요!</span>
           </div>
         </div>
       </div>
@@ -196,20 +202,20 @@
       <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
         <div class="flex items-center justify-between mb-2.5">
           <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
-            <span>📦</span> 단어 블럭 보관함
+            <span>📦</span> 단어 블록 보관함
           </span>
-          <span class="text-xs text-[#03c75a] font-bold">블럭 힌트가 열렸어요!</span>
+          <span class="text-xs text-[#03c75a] font-bold">블록 힌트가 열렸어요!</span>
         </div>
         <div id="wordPool" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 min-h-[90px] p-3 bg-slate-50 rounded-2xl border border-slate-200">
-          <!-- 블럭 동적 렌더링 -->
+          <!-- 블록 동적 렌더링 -->
         </div>
       </div>
     </div>
 
-    <!-- 하단 컨트롤 버튼 바 (다시 말하기 버튼 삭제 완료) -->
+    <!-- 하단 컨트롤 버튼 바 -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
       <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
-        <span>✨ 블럭 정답 확인</span>
+        <span>✨ 블록 정답 확인</span>
       </button>
 
       <!-- 💡 정답 보기 버튼 -->
@@ -230,7 +236,7 @@
 
   <script>
     /* ==========================================================================
-       1. 효과음 및 브라우저 오디오 언락(Unlock) 시스템
+       1. 오디오 언락 & 효과음 시스템
        ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let isAudioUnlocked = false;
@@ -369,12 +375,17 @@
     let questions = [];
     let curIndex = 0;
     
+    // 매칭 게임과 공유되는 클라우드 상태
     let cloudState = {
       coins: 0,
       totalMatchedCount: 0,
       giftCount: 0,
       maxGauge: 500
     };
+
+    // 🎯 문장별 정답률 데이터베이스 (로컬 스토리지 보존)
+    let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
+    let isCurrentTrialRecorded = false; // 한 문제당 1회만 카운트하기 위한 안전 플래그
 
     let stage = 1;
     let isRecording = false;
@@ -384,6 +395,7 @@
     const gaugeFill = document.getElementById('gaugeFill');
     const giftCount = document.getElementById('giftCount');
     const koreanSentence = document.getElementById('koreanSentence');
+    const accuracyBadge = document.getElementById('accuracyBadge');
 
     const stage1Box = document.getElementById('stage1Box');
     const stage2Box = document.getElementById('stage2Box');
@@ -447,6 +459,52 @@
     function addGauge(points) {
       cloudState.totalMatchedCount += points;
       updateGaugeUI(true);
+    }
+
+    /* ==========================================================================
+       🎯 문장별 정답률 백분율 업데이트 및 표시 함수
+       ========================================================================== */
+    function updateAccuracyBadgeUI(enSentence) {
+      const stat = sentenceStatsDB[enSentence];
+      if (!stat || stat.trials === 0) {
+        accuracyBadge.textContent = "🎯 NEW";
+        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-600 border-slate-300";
+        return;
+      }
+
+      const rate = Math.round((stat.hits / stat.trials) * 100);
+      accuracyBadge.textContent = `🎯 ${rate}%`;
+
+      if (rate >= 80) {
+        // 🟢 80% 이상: 완벽 적응 (초록)
+        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-emerald-100 text-[#02833b] border-[#a7f3d0]";
+      } else if (rate >= 50) {
+        // 🟡 50% ~ 79%: 연습 중 (노랑/주황)
+        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-amber-100 text-amber-800 border-amber-300";
+      } else {
+        // 🔴 50% 미만: 집중 필요 (빨강)
+        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-rose-100 text-rose-700 border-rose-300";
+      }
+    }
+
+    function recordSentenceResult(isSuccess) {
+      if (isCurrentTrialRecorded) return; // 이번 문제에서 이미 시도 기록을 남겼다면 중복 방지
+      isCurrentTrialRecorded = true;
+
+      const q = questions[curIndex];
+      if (!q) return;
+
+      if (!sentenceStatsDB[q.en]) {
+        sentenceStatsDB[q.en] = { trials: 0, hits: 0 };
+      }
+
+      sentenceStatsDB[q.en].trials += 1;
+      if (isSuccess) {
+        sentenceStatsDB[q.en].hits += 1;
+      }
+
+      localStorage.setItem('block_sentence_stats', JSON.stringify(sentenceStatsDB));
+      updateAccuracyBadgeUI(q.en);
     }
 
     /* ==========================================================================
@@ -520,7 +578,8 @@
       const targetClean = cleanTextForCheck(q.en);
 
       if (spokenClean === targetClean) {
-        onAnswerCorrect(3); // 말하기 성공 시 게이지 +3
+        recordSentenceResult(true); // 🟢 1단계 말하기 성공 시: 정답(+1) 기록
+        onAnswerCorrect(3);         // 게이지 +3
       } else {
         sound.wrong();
       }
@@ -552,14 +611,17 @@
       }
     }
 
+    // 💡 1단계에서 [단어 블록 보기] 버튼을 누르는 순간: 오답 처리(시도+1, 성공+0)
     openBlockBtn.addEventListener('click', () => {
       unlockAudioSystem();
       sound.hint();
+      recordSentenceResult(false); // 🔴 블록 힌트 사용 시 오답으로 1회 기록
       setGameStage(2);
     });
 
     giveUpBtn.addEventListener('click', () => {
       unlockAudioSystem();
+      recordSentenceResult(false);
       setGameStage(3);
       revealAnswerDirectly();
     });
@@ -585,7 +647,7 @@
     }
 
     /* ==========================================================================
-       6. 블럭 조립 및 파싱 로직 (정답 단어만 생성)
+       6. 블록 조립 및 파싱 로직 (정답 단어만 생성)
        ========================================================================== */
     function tokenizeEnglish(sentence) {
       if (!sentence) return [];
@@ -620,11 +682,15 @@
       }
 
       curIndex = idx;
+      isCurrentTrialRecorded = false; // 새 문제 시작 시 시도 기록 플래그 초기화
       nextBtn.style.display = "none";
       listenAgainBtn.style.display = "none";
 
       const q = questions[curIndex];
       koreanSentence.textContent = q.kr;
+
+      // 해당 문장의 누적 정답률 백분율 표시
+      updateAccuracyBadgeUI(q.en);
 
       assembledSlots.innerHTML = '';
       assembledSlots.appendChild(emptyGuideText);
@@ -718,7 +784,7 @@
     });
 
     /* ==========================================================================
-       7. 정답 판정 및 구글 시트 연동 게이지 보상 (+3 / +2)
+       7. 정답 판정 및 보상
        ========================================================================== */
     function onAnswerCorrect(gaugePoints) {
       unlockAudioSystem();
@@ -748,7 +814,7 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(2); // 블럭 조립 정답: 게이지 +2
+        onAnswerCorrect(2); // 2단계 블록 조립 정답: 게이지 +2
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
