@@ -89,14 +89,14 @@
       animation: shakeMotion 0.35s ease;
     }
 
-    /* 🎙️ 마이크 인식 중 펄스 및 음파 애니메이션 */
-    @keyframes micPulseRing {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1.05); }
-      50% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); transform: scale(1.08); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1.05); }
+    /* 🎙️ 기존의 안정적인 번쩍번쩍 펄스 효과 */
+    @keyframes micGlowPulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+      70% { box-shadow: 0 0 0 18px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
-    .mic-recording {
-      animation: micPulseRing 1.3s infinite ease-in-out !important;
+    .mic-active {
+      animation: micGlowPulse 1.2s infinite;
       background-color: #ef4444 !important;
       border-color: #b91c1c !important;
     }
@@ -260,7 +260,7 @@
       pop() { playTone(580, 'triangle', 0.07); },
       drop() { playTone(440, 'sine', 0.08); },
       hint() { playTone(520, 'sine', 0.12); playTone(680, 'sine', 0.18, 0.08); },
-      mic() { playTone(750, 'sine', 0.12); },
+      mic() { playTone(750, 'sine', 0.12); }, // 💡 시작 효과음 유지
       success() {
         playTone(523.25, 'sine', 0.12, 0.0);
         playTone(659.25, 'sine', 0.12, 0.08);
@@ -277,7 +277,7 @@
     };
 
     /* ==========================================================================
-       🔊 2. 맥북 & 아이패드 100% 동작 고품질 TTS 엔진
+       🔊 2. TTS 엔진
        ========================================================================== */
     let availableVoices = [];
 
@@ -295,7 +295,6 @@
     function getBestEnglishVoice() {
       if (availableVoices.length === 0) updateVoiceList();
       
-      // 구글 및 애플의 최고급 내추럴 보이스 우선 선택
       const premiumVoice = availableVoices.find(v => 
         v.lang.startsWith('en') && 
         (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Enhanced') || v.name.includes('Samantha') || v.name.includes('Ava') || v.name.includes('Nicky') || v.name.includes('Allison'))
@@ -314,7 +313,6 @@
 
       const cleanText = text.trim();
 
-      // 맥북/아이패드 멈춤 버그 방어: 이전 큐 즉시 초기화
       window.speechSynthesis.cancel();
       window.speechSynthesis.resume();
 
@@ -507,7 +505,7 @@
     }
 
     /* ==========================================================================
-       4. Web Speech STT (충돌 없는 순수 모드)
+       4. Web Speech STT (시작 효과음 + 부드러운 펄스 애니메이션)
        ========================================================================== */
     function initSTT() {
       const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -524,8 +522,8 @@
 
       recognition.onstart = () => {
         isRecording = true;
-        sound.mic();
-        mainMicBtn.classList.add('mic-recording');
+        sound.mic(); // 💡 삐- 시작 효과음
+        mainMicBtn.classList.add('mic-active'); // 💡 번쩍번쩍 펄스 효과 복원
         mainMicIcon.textContent = "🛑";
         mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
       };
@@ -555,7 +553,7 @@
 
     function stopSTT() {
       isRecording = false;
-      mainMicBtn.classList.remove('mic-recording');
+      mainMicBtn.classList.remove('mic-active');
       mainMicIcon.textContent = "🎤";
       mainMicLabel.textContent = "마이크 누르고 말하기";
     }
