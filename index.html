@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>블록 스피킹 원정대 🧩🎤</title>
+  <title>말문 팡팡 🧩🎤</title>
   
   <!-- Tailwind CSS & Confetti -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -122,7 +122,7 @@
       </div>
       <div>
         <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide">
-          블록 스피킹 원정대
+          말문 팡팡
         </h1>
         <p class="text-xs text-slate-500 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
       </div>
@@ -382,7 +382,6 @@
       maxGauge: 500
     };
 
-    // 🎯 문장별 정답률 DB
     let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
     let isCurrentTrialRecorded = false;
 
@@ -514,10 +513,6 @@
         const rateA = statA && statA.trials > 0 ? (statA.hits / statA.trials) * 100 : -1;
         const rateB = statB && statB.trials > 0 ? (statB.hits / statB.trials) * 100 : -1;
 
-        // 우선순위 가중치:
-        // 0% ~ 99% (틀린 적 있는 취약 문장) -> 가중치 1 (가장 앞)
-        // -1 (아직 안 푼 NEW 문장)         -> 가중치 2 (중간 진도)
-        // 100% (완전 마스터 문장)          -> 가중치 3 (가장 뒤)
         const getPriorityTier = (rate) => {
           if (rate >= 0 && rate < 100) return 1; // 취약 문장
           if (rate === -1) return 2;             // 신규 문장 (NEW)
@@ -531,16 +526,14 @@
           return tierA - tierB;
         }
 
-        // 같은 취약 문장 구간(0~99%)끼리는 정답률이 낮은 순으로 정렬
         if (tierA === 1) {
           if (rateA !== rateB) {
-            return rateA - rateB; // 정답률 오름차순 (낮은 순)
+            return rateA - rateB;
           }
-          // 정답률까지 같다면 시도 횟수(trials)가 많은 문장이 더 어려워하는 것이므로 앞 배치
           return (statB.trials || 0) - (statA.trials || 0);
         }
 
-        return 0; // 원본 순서 유지
+        return 0;
       });
     }
 
@@ -872,7 +865,7 @@
       stage2Box.style.display = "flex";
       assembledSlots.innerHTML = `
         <div class="w-full py-8 text-center">
-          <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 스피킹 탐험가! 🏆</p>
+          <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 말문 팡팡 마스터! 🏆</p>
           <p class="text-slate-500 mb-4 font-sans">누적 선물: ${cloudState.giftCount}개 🎁</p>
           <button onclick="restartGameWithResort()" class="toy-btn bg-[#03c75a] text-white font-bold text-lg px-8 py-3 rounded-2xl">
             약점 문장부터 다시 도전하기 🚀
@@ -952,7 +945,6 @@
         });
 
         if (list.length > 0) {
-          // 💡 정답률 낮은 순(취약 문장 우선)으로 스마트 정렬 후 게임 시작!
           questions = sortQuestionsByAccuracy(list);
           loadQuestion(0);
           return;
