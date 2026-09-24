@@ -107,6 +107,7 @@
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6">
 
+  <!-- 헤더 영역 -->
   <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border border-emerald-300 gap-3 mb-3">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 bg-amber-300 rounded-2xl flex items-center justify-center text-3xl shadow-inner border-2 border-amber-400">
@@ -120,6 +121,7 @@
       </div>
     </div>
 
+    <!-- ⚡ 매칭게임 구글 시트 연동 게이지 & 🎁 선물 상자 -->
     <div class="flex items-center gap-2 sm:gap-3 ml-auto bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-inner">
       <span class="text-lg">⚡</span>
       <div class="gauge-bg">
@@ -132,8 +134,10 @@
     </div>
   </header>
 
+  <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
+    <!-- 1번 박스: 우측 상단에 정답률 백분율 배지 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 --%
@@ -144,6 +148,7 @@
       </div>
     </div>
 
+    <!-- 2번 박스 (1단계): 스피킹 단독 영역 -->
     <div id="stage1Box" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-4">
       <p id="stage1TipText" class="text-base sm:text-lg font-black text-slate-800">
         머릿속으로 영어가 떠올랐나요?
@@ -154,11 +159,13 @@
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
+      <!-- 2단계 진입 버튼 -->
       <button id="openBlockBtn" class="mt-3 text-sm text-[#029f48] hover:text-[#02833b] bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-2xl border border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
         <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
     </div>
 
+    <!-- 3번 박스 (2단계): 블록 조립 컨테이너 -->
     <div id="stage2Box" style="display: none;" class="flex flex-col gap-3.5">
       <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
         <div class="flex items-center justify-between mb-2">
@@ -193,6 +200,7 @@
       </div>
     </div>
 
+    <!-- 하단 컨트롤 버튼 바 -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
       <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
@@ -213,12 +221,22 @@
   </main>
 
   <script>
+    /* ==========================================================================
+       1. 효과음 및 오디오 언락 시스템
+       ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let isAudioUnlocked = false;
+
+    // 공용 오디오 플레이어 (구글 고품질 TTS용)
+    const ttsAudio = new Audio();
 
     function unlockAudioSystem() {
       if (isAudioUnlocked) return;
       if (audioCtx.state === 'suspended') audioCtx.resume();
+      
+      // 구글 TTS 오디오 객체 미리 활성화 (아이패드 사파리용)
+      ttsAudio.play().catch(() => {});
+      
       if ('speechSynthesis' in window) {
         window.speechSynthesis.resume();
         const dummyUtter = new SpeechSynthesisUtterance('');
@@ -268,42 +286,41 @@
       }
     };
 
-    let cachedVoices = [];
-    function loadVoices() {
-      if ('speechSynthesis' in window) cachedVoices = window.speechSynthesis.getVoices();
-    }
-    if ('speechSynthesis' in window) {
-      loadVoices();
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
+    /* ==========================================================================
+       🔊 2. 스피킹 마스터 공식 고품질 구글 원어민 TTS 엔진
+       ========================================================================== */
     function speakText(text) {
-      if (!text || !('speechSynthesis' in window)) return;
+      if (!text) return;
       unlockAudioSystem();
+
       const cleanText = text.trim();
-      window.speechSynthesis.cancel();
-      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+      const encoded = encodeURIComponent(cleanText);
+      const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${encoded}`;
 
-      setTimeout(() => {
-        try {
-          const utter = new SpeechSynthesisUtterance(cleanText);
-          utter.lang = 'en-US';
-          utter.rate = 0.88;
-          utter.pitch = 1.0;
-          utter.volume = 1.0;
+      ttsAudio.pause();
+      ttsAudio.currentTime = 0;
+      ttsAudio.src = googleTtsUrl;
 
-          if (cachedVoices.length === 0) loadVoices();
-          const targetVoice = cachedVoices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Samantha') || v.name.includes('Jenny') || v.name.includes('Ava'))) ||
-                              cachedVoices.find(v => v.lang.startsWith('en-US')) ||
-                              cachedVoices.find(v => v.lang.startsWith('en'));
-          if (targetVoice) utter.voice = targetVoice;
-
-          window.speechSynthesis.speak(utter);
-          if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-        } catch (e) {}
-      }, 50);
+      // 구글 TTS 재생 시도
+      const playPromise = ttsAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          // 혹시 네트워크 상태 등으로 실패할 경우 Web Speech Synthesis로 백업
+          console.warn("구글 TTS 스트림 재생 실패, 기본 엔진으로 대체:", err);
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(cleanText);
+            utter.lang = 'en-US';
+            utter.rate = 0.9;
+            window.speechSynthesis.speak(utter);
+          }
+        });
+      }
     }
 
+    /* ==========================================================================
+       3. 구글 스프레드시트 & 클라우드 연동
+       ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
 
@@ -478,6 +495,9 @@
       return str.toLowerCase().replace(/[.,!?;:'"()\-]/g, '').replace(/\s+/g, ' ').trim();
     }
 
+    /* ==========================================================================
+       4. 실시간 음성 감지 비주얼라이저
+       ========================================================================== */
     async function startVoiceVisualizer() {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
@@ -545,6 +565,9 @@
       mainMicIcon.style.transform = 'scale(1)';
     }
 
+    /* ==========================================================================
+       5. Web Speech STT
+       ========================================================================== */
     function initSTT() {
       const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechClass) {
@@ -613,6 +636,9 @@
       }
     }
 
+    /* ==========================================================================
+       6. 단계 컨트롤
+       ========================================================================== */
     function setGameStage(newStage) {
       stage = newStage;
       if (stage === 1) {
@@ -643,6 +669,7 @@
       setGameStage(2);
     });
 
+    // 💡 정답 보기 터치 시: 즉시 조립 슬롯에 정답 채우고 고품질 구글 발음 출력
     giveUpBtn.addEventListener('click', () => {
       unlockAudioSystem();
       recordSentenceResult(false);
@@ -650,6 +677,7 @@
       revealAnswerDirectly();
     });
 
+    // 💡 다시 듣기 터치 시: 즉시 고품질 구글 발음 출력
     listenAgainBtn.addEventListener('click', () => {
       unlockAudioSystem();
       const q = questions[curIndex];
@@ -670,7 +698,6 @@
       nextBtn.style.display = "inline-flex";
     }
 
-    /* 💡 마침표(.), 물음표(?), 느낌표(!) 완벽 제거 + 단어 꼬리 점까지 이중 필터링 */
     function tokenizeEnglish(sentence) {
       if (!sentence) return [];
       let clean = sentence.trim().replace(/[.!?\s]+$/, '');
