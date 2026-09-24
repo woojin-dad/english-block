@@ -4,24 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   
-  <!-- 💡 브라우저 캐시 방지 메타태그 -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
   <title>말문 팡팡 🧩🎤</title>
   
-  <!-- Tailwind CSS & Confetti -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
-  <!-- 폰트 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Jua&display=swap" rel="stylesheet">
   
   <style>
-    /* 🌿 N 아이콘의 공식 네이버 그린(#03c75a) 기반 편안하고 산뜻한 배경 */
     body {
       font-family: 'Jua', 'Fredoka', cursive, sans-serif;
       user-select: none;
@@ -35,7 +31,6 @@
       font-family: 'Fredoka', cursive, sans-serif;
     }
 
-    /* 3D 완구 버튼 효과 */
     .toy-btn {
       transition: all 0.1s ease-in-out;
       box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18);
@@ -45,7 +40,6 @@
       box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
     }
 
-    /* 단어 블록 스타일 */
     .word-block {
       transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
       box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
@@ -59,7 +53,6 @@
       box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
     }
 
-    /* 조립 슬롯 구역 */
     .slot-zone {
       min-height: 90px;
       border: 3px dashed #a7f3d0;
@@ -72,7 +65,6 @@
       transform: scale(1.01);
     }
 
-    /* ⚡ 매칭게임 스타일 게이지 바 */
     .gauge-bg {
       width: 110px;
       height: 18px;
@@ -88,7 +80,6 @@
       transition: width 0.4s ease-out;
     }
 
-    /* 오답 흔들림 */
     @keyframes shakeMotion {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-8px); }
@@ -98,7 +89,6 @@
       animation: shakeMotion 0.35s ease;
     }
 
-    /* 마이크 녹음 중 펄스 효과 */
     @keyframes micGlowPulse {
       0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
       70% { box-shadow: 0 0 0 18px rgba(239, 68, 68, 0); }
@@ -113,10 +103,8 @@
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6">
 
-  <!-- 헤더 영역 -->
   <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border border-emerald-300 gap-3 mb-3">
     <div class="flex items-center gap-3">
-      <!-- 🧩 블록 아이콘 -->
       <div class="w-12 h-12 bg-amber-300 rounded-2xl flex items-center justify-center text-3xl shadow-inner border-2 border-amber-400">
         🧩
       </div>
@@ -128,7 +116,6 @@
       </div>
     </div>
 
-    <!-- ⚡ 매칭게임 구글 시트 연동 게이지 & 🎁 선물 상자 -->
     <div class="flex items-center gap-2 sm:gap-3 ml-auto bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-inner">
       <span class="text-lg">⚡</span>
       <div class="gauge-bg">
@@ -141,13 +128,9 @@
     </div>
   </header>
 
-  <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 우측 상단에 정답률 백분율 배지 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
-      
-      <!-- 🎯 정답률 백분율 배지 -->
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 --%
       </div>
@@ -157,7 +140,6 @@
       </div>
     </div>
 
-    <!-- 2번 박스 (1단계): 스피킹 단독 영역 -->
     <div id="stage1Box" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-4">
       <p class="text-base sm:text-lg font-black text-slate-800">
         머릿속으로 영어가 떠올랐나요?
@@ -168,15 +150,12 @@
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
-      <!-- 2단계 진입 버튼 -->
       <button id="openBlockBtn" class="mt-3 text-sm text-[#029f48] hover:text-[#02833b] bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-2xl border border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
         <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
     </div>
 
-    <!-- 3번 박스 (2단계): 블록 조립 컨테이너 (초기 숨김) -->
     <div id="stage2Box" style="display: none;" class="flex flex-col gap-3.5">
-      <!-- 내가 만든 문장 박스 -->
       <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
@@ -198,7 +177,6 @@
         </div>
       </div>
 
-      <!-- 단어 보관함 -->
       <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
         <div class="flex items-center justify-between mb-2.5">
           <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
@@ -207,23 +185,19 @@
           <span class="text-xs text-[#03c75a] font-bold">블록 힌트가 열렸어요!</span>
         </div>
         <div id="wordPool" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 min-h-[90px] p-3 bg-slate-50 rounded-2xl border border-slate-200">
-          <!-- 블록 동적 렌더링 -->
         </div>
       </div>
     </div>
 
-    <!-- 하단 컨트롤 버튼 바 -->
     <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
       <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
       </button>
 
-      <!-- 💡 정답 보기 버튼 -->
       <button id="giveUpBtn" style="display: none;" class="toy-btn bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-sm sm:text-base px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>💡 정답 보기</span>
       </button>
 
-      <!-- 🔊 원어민 다시 듣기 버튼 -->
       <button id="listenAgainBtn" style="display: none;" class="toy-btn bg-sky-500 hover:bg-sky-600 text-white font-bold text-base sm:text-lg px-5 sm:px-7 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>🔊 다시 듣기</span>
       </button>
@@ -235,9 +209,6 @@
   </main>
 
   <script>
-    /* ==========================================================================
-       1. 효과음 및 브라우저 오디오 언락(Unlock) 시스템
-       ========================================================================== */
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let isAudioUnlocked = false;
 
@@ -295,9 +266,6 @@
       }
     };
 
-    /* ==========================================================================
-       2. 원어민 TTS (SpeechSynthesis 직결 엔진)
-       ========================================================================== */
     let cachedVoices = [];
     function loadVoices() {
       if ('speechSynthesis' in window) {
@@ -346,9 +314,6 @@
       }, 50);
     }
 
-    /* ==========================================================================
-       3. 구글 스프레드시트 & 클라우드 실시간 연동 (매칭 게임과 완벽 공유)
-       ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
 
@@ -389,7 +354,6 @@
     let isRecording = false;
     let recognition = null;
 
-    // DOM 노드
     const gaugeFill = document.getElementById('gaugeFill');
     const giftCount = document.getElementById('giftCount');
     const koreanSentence = document.getElementById('koreanSentence');
@@ -459,9 +423,6 @@
       updateGaugeUI(true);
     }
 
-    /* ==========================================================================
-       🎯 문장별 정답률 백분율 UI & 기록 함수
-       ========================================================================== */
     function updateAccuracyBadgeUI(enSentence) {
       const stat = sentenceStatsDB[enSentence];
       if (!stat || stat.trials === 0) {
@@ -502,9 +463,6 @@
       updateAccuracyBadgeUI(q.en);
     }
 
-    /* ==========================================================================
-       📊 스마트 정렬: 취약한 문장(정답률 낮은 순) 우선 등장 알고리즘
-       ========================================================================== */
     function sortQuestionsByAccuracy(list) {
       return list.sort((a, b) => {
         const statA = sentenceStatsDB[a.en];
@@ -514,9 +472,9 @@
         const rateB = statB && statB.trials > 0 ? (statB.hits / statB.trials) * 100 : -1;
 
         const getPriorityTier = (rate) => {
-          if (rate >= 0 && rate < 100) return 1; // 취약 문장
-          if (rate === -1) return 2;             // 신규 문장 (NEW)
-          return 3;                              // 마스터 문장 (100%)
+          if (rate >= 0 && rate < 100) return 1;
+          if (rate === -1) return 2;
+          return 3;
         };
 
         const tierA = getPriorityTier(rateA);
@@ -537,9 +495,6 @@
       });
     }
 
-    /* ==========================================================================
-       4. Web Speech STT (1단계 스피킹 마이크)
-       ========================================================================== */
     function cleanTextForCheck(str) {
       return str.toLowerCase().replace(/[.,!?;:'"()\-]/g, '').replace(/\s+/g, ' ').trim();
     }
@@ -582,7 +537,7 @@
     function toggleSTT() {
       unlockAudioSystem();
       if (!recognition) {
-        alert("크롬(Chrome) 또는 엣지(Edge) 브라우저를 사용해 주세요!");
+        alert("사파리(Safari) 또는 크롬(Chrome) 브라우저를 사용해 주세요!");
         return;
       }
       if (isRecording) {
@@ -615,9 +570,6 @@
       }
     }
 
-    /* ==========================================================================
-       5. 단계 컨트롤
-       ========================================================================== */
     function setGameStage(newStage) {
       stage = newStage;
       if (stage === 1) {
@@ -675,14 +627,14 @@
       nextBtn.style.display = "inline-flex";
     }
 
-    /* ==========================================================================
-       6. 블록 조립 및 로딩 로직
-       ========================================================================== */
+    // 💡 마침표(.), 느낌표(!), 물음표(?)는 버리고, 쉼표(,)는 단어 꼬리에 자연스럽게 유지
     function tokenizeEnglish(sentence) {
       if (!sentence) return [];
-      const clean = sentence.trim();
-      const match = clean.match(/[A-Za-z0-9'\-]+|[.,!?;]/g);
-      return match || clean.split(/\s+/);
+      // 문장 맨 끝의 온점, 느낌표, 물음표 제거
+      const trimmed = sentence.trim().replace(/[.!?]+$/, '');
+      // 공백 기준으로 단어를 나누되, 단어에 붙은 쉼표(,)는 그대로 블록에 보존
+      const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+      return words;
     }
 
     function shuffleArray(arr) {
@@ -738,8 +690,7 @@
     function makeBlockElement(word, id) {
       const theme = BLOCK_THEMES[hashWord(word) % BLOCK_THEMES.length];
       const el = document.createElement('div');
-      const isPunct = [".", ",", "!", "?"].includes(word);
-      const pad = isPunct ? "px-3.5 py-1 text-2xl" : "px-4 py-2 sm:px-5 sm:py-2.5 text-lg sm:text-xl";
+      const pad = "px-4 py-2 sm:px-5 sm:py-2.5 text-lg sm:text-xl";
 
       el.className = `word-block font-eng font-bold ${pad} rounded-2xl border-2 ${theme.bg} ${theme.text} ${theme.border} select-none flex items-center justify-center gap-1`;
       el.setAttribute('draggable', 'true');
@@ -811,9 +762,6 @@
       emptyGuideText.style.display = 'flex';
     });
 
-    /* ==========================================================================
-       7. 정답 판정 및 보상
-       ========================================================================== */
     function onAnswerCorrect(gaugePoints) {
       unlockAudioSystem();
       sound.success();
@@ -839,6 +787,7 @@
         return;
       }
 
+      // 조립한 단어와 정답 단어 매칭 검사
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
@@ -884,9 +833,6 @@
       loadQuestion(0);
     }
 
-    /* ==========================================================================
-       8. CSV 파서 & 시트 자동 연동 (스마트 정렬 연동)
-       ========================================================================== */
     function parseCSV(text) {
       const rows = [];
       let row = [];
