@@ -89,7 +89,6 @@
       animation: shakeMotion 0.35s ease;
     }
 
-    /* 🎙️ 기존의 안정적인 번쩍번쩍 펄스 효과 */
     @keyframes micGlowPulse {
       0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
       70% { box-shadow: 0 0 0 18px rgba(239, 68, 68, 0); }
@@ -146,7 +145,7 @@
     </div>
 
     <!-- 2번 박스 (1단계): 스피킹 영역 -->
-    <div id="stage1Box" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-4">
+    <div id="stage1Box" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-3">
       <p id="stage1TipText" class="text-base sm:text-lg font-black text-slate-800">
         머릿속으로 영어가 떠올랐나요?
       </p>
@@ -156,8 +155,11 @@
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
+      <!-- 💡 내가 방금 말한 내용을 살짝 보여주는 디버깅 힌트 -->
+      <div id="spokenDebugText" class="text-xs font-sans text-slate-400 min-h-[18px]"></div>
+
       <!-- 2단계 진입 버튼 -->
-      <button id="openBlockBtn" class="mt-3 text-sm text-[#029f48] hover:text-[#02833b] bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-2xl border border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
+      <button id="openBlockBtn" class="text-sm text-[#029f48] hover:text-[#02833b] bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-2xl border border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
         <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
     </div>
@@ -260,7 +262,7 @@
       pop() { playTone(580, 'triangle', 0.07); },
       drop() { playTone(440, 'sine', 0.08); },
       hint() { playTone(520, 'sine', 0.12); playTone(680, 'sine', 0.18, 0.08); },
-      mic() { playTone(750, 'sine', 0.12); }, // 💡 시작 효과음 유지
+      mic() { playTone(750, 'sine', 0.12); },
       success() {
         playTone(523.25, 'sine', 0.12, 0.0);
         playTone(659.25, 'sine', 0.12, 0.08);
@@ -324,9 +326,7 @@
         utter.volume = 1.0;
 
         const targetVoice = getBestEnglishVoice();
-        if (targetVoice) {
-          utter.voice = targetVoice;
-        }
+        if (targetVoice) utter.voice = targetVoice;
 
         window.speechSynthesis.speak(utter);
       }, 10);
@@ -339,8 +339,8 @@
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
 
     const BACKUP_QUESTIONS = [
-      { kr: "나는 매일 아침 사과를 먹어요.", en: "I eat an apple every morning." },
-      { kr: "그 고양이는 침대 위에서 자고 있어요.", en: "The cat is sleeping on the bed." }
+      { kr: "당신은 키가 커요.", en: "You're tall." },
+      { kr: "나는 매일 아침 사과를 먹어요.", en: "I eat an apple every morning." }
     ];
 
     const BLOCK_THEMES = [
@@ -383,6 +383,7 @@
     const mainMicBtn = document.getElementById('mainMicBtn');
     const mainMicIcon = document.getElementById('mainMicIcon');
     const mainMicLabel = document.getElementById('mainMicLabel');
+    const spokenDebugText = document.getElementById('spokenDebugText');
     const stage1TipText = document.getElementById('stage1TipText');
     const openBlockBtn = document.getElementById('openBlockBtn');
     const checkBlockBtn = document.getElementById('checkBlockBtn');
@@ -500,12 +501,36 @@
       });
     }
 
-    function cleanTextForCheck(str) {
-      return str.toLowerCase().replace(/[.,!?;:'"()\-]/g, '').replace(/\s+/g, ' ').trim();
+    /* 💡 음성 인식용 스마트 텍스트 정규화 (축약형 및 구두점 호환) */
+    function normalizeForSpeech(str) {
+      if (!str) return "";
+      let s = str.toLowerCase();
+
+      // 아포스트로피 및 문장부호 제거
+      s = s.replace(/['"’‘.,!?;:\-]/g, ' ');
+
+      // 축약형 동의어 표준화
+      s = s.replace(/\byour\b/g, 'you are')
+           .replace(/\byoure\b/g, 'you are')
+           .replace(/\byou are\b/g, 'you are')
+           .replace(/\bim\b/g, 'i am')
+           .replace(/\bi am\b/g, 'i am')
+           .replace(/\bits\b/g, 'it is')
+           .replace(/\bit is\b/g, 'it is')
+           .replace(/\bhes\b/g, 'he is')
+           .replace(/\bshes\b/g, 'she is')
+           .replace(/\btheyre\b/g, 'they are')
+           .replace(/\btheir\b/g, 'they are')
+           .replace(/\bwere\b/g, 'we are');
+
+      // 자주 발생하는 STT 철자 혼동 단어 보정
+      s = s.replace(/\btoll\b/g, 'tall');
+
+      return s.replace(/\s+/g, ' ').trim();
     }
 
     /* ==========================================================================
-       4. Web Speech STT (시작 효과음 + 부드러운 펄스 애니메이션)
+       4. Web Speech STT
        ========================================================================== */
     function initSTT() {
       const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -518,19 +543,23 @@
       recognition = new SpeechClass();
       recognition.lang = 'en-US';
       recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+      recognition.maxAlternatives = 3;
 
       recognition.onstart = () => {
         isRecording = true;
-        sound.mic(); // 💡 삐- 시작 효과음
-        mainMicBtn.classList.add('mic-active'); // 💡 번쩍번쩍 펄스 효과 복원
+        sound.mic();
+        mainMicBtn.classList.add('mic-active');
         mainMicIcon.textContent = "🛑";
         mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
+        spokenDebugText.textContent = "";
       };
 
       recognition.onresult = (e) => {
-        const spoken = e.results[0][0].transcript;
-        handleSpokenResult(spoken);
+        const spokenList = [];
+        for (let i = 0; i < e.results[0].length; i++) {
+          spokenList.push(e.results[0][i].transcript);
+        }
+        handleSpokenResults(spokenList);
       };
 
       recognition.onerror = () => { stopSTT(); };
@@ -560,12 +589,21 @@
 
     mainMicBtn.addEventListener('click', toggleSTT);
 
-    function handleSpokenResult(spoken) {
+    function handleSpokenResults(spokenList) {
       const q = questions[curIndex];
-      const spokenClean = cleanTextForCheck(spoken);
-      const targetClean = cleanTextForCheck(q.en);
+      const targetNorm = normalizeForSpeech(q.en);
 
-      if (spokenClean === targetClean) {
+      const primarySpoken = spokenList[0] || '';
+      spokenDebugText.textContent = `들린 말: "${primarySpoken}"`;
+
+      // 인식 후보 중 하나라도 일치하면 정답 처리!
+      const isMatched = spokenList.some(spoken => {
+        const spokenNorm = normalizeForSpeech(spoken);
+        return spokenNorm === targetNorm;
+      });
+
+      if (isMatched) {
+        spokenDebugText.textContent = `🎯 완벽해요: "${primarySpoken}"`;
         recordSentenceResult(true);
         onAnswerCorrect(3);
       } else {
@@ -671,6 +709,7 @@
       isCurrentTrialRecorded = false;
       nextBtn.style.display = "none";
       listenAgainBtn.style.display = "none";
+      spokenDebugText.textContent = "";
 
       const q = questions[curIndex];
       koreanSentence.textContent = q.kr;
