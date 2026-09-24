@@ -121,7 +121,7 @@
       </div>
     </div>
 
-    <!-- ⚡ 매칭게임 구글 시트 연동 게이지 & 🎁 선물 상자 -->
+    <!-- ⚡ 매칭게임 연동 게이지 & 선물 상자 -->
     <div class="flex items-center gap-2 sm:gap-3 ml-auto bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-inner">
       <span class="text-lg">⚡</span>
       <div class="gauge-bg">
@@ -137,7 +137,7 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 우측 상단에 정답률 백분율 배지 -->
+    <!-- 1번 박스: 문장 및 백분율 배지 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 --%
@@ -227,21 +227,14 @@
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let isAudioUnlocked = false;
 
-    // 공용 오디오 플레이어 (구글 고품질 TTS용)
-    const ttsAudio = new Audio();
-
     function unlockAudioSystem() {
       if (isAudioUnlocked) return;
       if (audioCtx.state === 'suspended') audioCtx.resume();
-      
-      // 구글 TTS 오디오 객체 미리 활성화 (아이패드 사파리용)
-      ttsAudio.play().catch(() => {});
-      
       if ('speechSynthesis' in window) {
         window.speechSynthesis.resume();
-        const dummyUtter = new SpeechSynthesisUtterance('');
-        dummyUtter.volume = 0;
-        window.speechSynthesis.speak(dummyUtter);
+        const dummy = new SpeechSynthesisUtterance('');
+        dummy.volume = 0;
+        window.speechSynthesis.speak(dummy);
       }
       isAudioUnlocked = true;
     }
@@ -287,39 +280,67 @@
     };
 
     /* ==========================================================================
-       🔊 2. 스피킹 마스터 공식 고품질 구글 원어민 TTS 엔진
+       🔊 2. 맥북 & 아이패드 고품질 원어민 TTS 전용 엔진
        ========================================================================== */
-    function speakText(text) {
-      if (!text) return;
-      unlockAudioSystem();
+    let availableVoices = [];
 
-      const cleanText = text.trim();
-      const encoded = encodeURIComponent(cleanText);
-      const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${encoded}`;
-
-      ttsAudio.pause();
-      ttsAudio.currentTime = 0;
-      ttsAudio.src = googleTtsUrl;
-
-      // 구글 TTS 재생 시도
-      const playPromise = ttsAudio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          // 혹시 네트워크 상태 등으로 실패할 경우 Web Speech Synthesis로 백업
-          console.warn("구글 TTS 스트림 재생 실패, 기본 엔진으로 대체:", err);
-          if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utter = new SpeechSynthesisUtterance(cleanText);
-            utter.lang = 'en-US';
-            utter.rate = 0.9;
-            window.speechSynthesis.speak(utter);
-          }
-        });
+    function updateVoiceList() {
+      if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
       }
     }
 
+    if ('speechSynthesis' in window) {
+      updateVoiceList();
+      window.speechSynthesis.onvoiceschanged = updateVoiceList;
+    }
+
+    function getBestEnglishVoice() {
+      if (availableVoices.length === 0) updateVoiceList();
+      
+      // 1순위: 프리미엄/내추럴 고품질 원어민 음성 (Google US English, Samantha Enhanced, Ava, Jenny 등)
+      const premiumVoice = availableVoices.find(v => 
+        v.lang.startsWith('en') && 
+        (v.name.includes('Natural') || v.name.includes('Google US') || v.name.includes('Enhanced') || v.name.includes('Samantha') || v.name.includes('Ava') || v.name.includes('Nicky'))
+      );
+      if (premiumVoice) return premiumVoice;
+
+      // 2순위: 미국 영어 (en-US)
+      const usVoice = availableVoices.find(v => v.lang === 'en-US' || v.lang === 'en_US');
+      if (usVoice) return usVoice;
+
+      // 3순위: 기타 영어
+      return availableVoices.find(v => v.lang.startsWith('en'));
+    }
+
+    function speakText(text) {
+      if (!text || !('speechSynthesis' in window)) return;
+      unlockAudioSystem();
+
+      const cleanText = text.trim();
+
+      // Safari/iOS 멈춤 방지를 위한 확실한 리셋
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      const utter = new SpeechSynthesisUtterance(cleanText);
+      utter.lang = 'en-US';
+      utter.rate = 0.88;  // 학습에 가장 듣기 편한 속도
+      utter.pitch = 1.0;
+      utter.volume = 1.0;
+
+      const targetVoice = getBestEnglishVoice();
+      if (targetVoice) {
+        utter.voice = targetVoice;
+      }
+
+      window.speechSynthesis.speak(utter);
+    }
+
     /* ==========================================================================
-       3. 구글 스프레드시트 & 클라우드 연동
+       3. 구글 시트 & 클라우드 연동
        ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
@@ -669,7 +690,6 @@
       setGameStage(2);
     });
 
-    // 💡 정답 보기 터치 시: 즉시 조립 슬롯에 정답 채우고 고품질 구글 발음 출력
     giveUpBtn.addEventListener('click', () => {
       unlockAudioSystem();
       recordSentenceResult(false);
@@ -677,7 +697,6 @@
       revealAnswerDirectly();
     });
 
-    // 💡 다시 듣기 터치 시: 즉시 고품질 구글 발음 출력
     listenAgainBtn.addEventListener('click', () => {
       unlockAudioSystem();
       const q = questions[curIndex];
