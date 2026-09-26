@@ -835,7 +835,7 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(2);
+        onAnswerCorrect(1);
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
