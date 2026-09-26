@@ -155,7 +155,7 @@
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
-      <!-- 💡 내가 방금 말한 내용을 살짝 보여주는 디버깅 힌트 -->
+      <!-- 내가 방금 말한 내용을 살짝 보여주는 디버깅 힌트 -->
       <div id="spokenDebugText" class="text-xs font-sans text-slate-400 min-h-[18px]"></div>
 
       <!-- 2단계 진입 버튼 -->
@@ -339,7 +339,7 @@
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
 
     const BACKUP_QUESTIONS = [
-      { kr: "당신은 키가 커요.", en: "You're tall." },
+      { kr: "당신은 키가 커요.", en: "You are tall." },
       { kr: "나는 매일 아침 사과를 먹어요.", en: "I eat an apple every morning." }
     ];
 
@@ -474,6 +474,11 @@
       updateAccuracyBadgeUI(q.en);
     }
 
+    /* 💡 [출제 우선순위 알고리즘 변경]
+       1순위: NEW 문장 (한 번도 안 푼 문장)
+       2순위: 틀린 적이 있는 문장 (정답률 0% ~ 99%)
+       3순위: 정답률 100% 문장
+    */
     function sortQuestionsByAccuracy(list) {
       return list.sort((a, b) => {
         const statA = sentenceStatsDB[a.en];
@@ -483,9 +488,9 @@
         const rateB = statB && statB.trials > 0 ? (statB.hits / statB.trials) * 100 : -1;
 
         const getPriorityTier = (rate) => {
-          if (rate >= 0 && rate < 100) return 1;
-          if (rate === -1) return 2;
-          return 3;
+          if (rate === -1) return 1;                   // 1순위: NEW
+          if (rate >= 0 && rate < 100) return 2;        // 2순위: 틀린 적이 있는 문장
+          return 3;                                    // 3순위: 정답률 100%
         };
 
         const tierA = getPriorityTier(rateA);
@@ -493,7 +498,8 @@
 
         if (tierA !== tierB) return tierA - tierB;
 
-        if (tierA === 1) {
+        // 2순위 내부: 정답률이 더 낮은 문장이 먼저 출제
+        if (tierA === 2) {
           if (rateA !== rateB) return rateA - rateB;
           return (statB.trials || 0) - (statA.trials || 0);
         }
@@ -501,15 +507,12 @@
       });
     }
 
-    /* 💡 음성 인식용 스마트 텍스트 정규화 (축약형 및 구두점 호환) */
     function normalizeForSpeech(str) {
       if (!str) return "";
       let s = str.toLowerCase();
 
-      // 아포스트로피 및 문장부호 제거
       s = s.replace(/['"’‘.,!?;:\-]/g, ' ');
 
-      // 축약형 동의어 표준화
       s = s.replace(/\byour\b/g, 'you are')
            .replace(/\byoure\b/g, 'you are')
            .replace(/\byou are\b/g, 'you are')
@@ -523,7 +526,6 @@
            .replace(/\btheir\b/g, 'they are')
            .replace(/\bwere\b/g, 'we are');
 
-      // 자주 발생하는 STT 철자 혼동 단어 보정
       s = s.replace(/\btoll\b/g, 'tall');
 
       return s.replace(/\s+/g, ' ').trim();
@@ -596,7 +598,6 @@
       const primarySpoken = spokenList[0] || '';
       spokenDebugText.textContent = `들린 말: "${primarySpoken}"`;
 
-      // 인식 후보 중 하나라도 일치하면 정답 처리!
       const isMatched = spokenList.some(spoken => {
         const spokenNorm = normalizeForSpeech(spoken);
         return spokenNorm === targetNorm;
