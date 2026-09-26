@@ -99,9 +99,36 @@
       background-color: #ef4444 !important;
       border-color: #b91c1c !important;
     }
+
+    /* 콤보 팝업 애니메이션 */
+    @keyframes comboPopIn {
+      0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+      60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .animate-combo-pop {
+      animation: comboPopIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
   </style>
 </head>
-<body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6">
+<body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 relative">
+
+  <!-- 🔥 10콤보 달성 축하 모달 팝업 -->
+  <div id="comboModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="animate-combo-pop bg-gradient-to-b from-amber-300 via-orange-400 to-rose-500 p-1 rounded-3xl shadow-2xl max-w-sm w-full text-center">
+      <div class="bg-white rounded-[22px] p-6 sm:p-8 flex flex-col items-center">
+        <div class="text-6xl sm:text-7xl mb-2 animate-bounce">🔥</div>
+        <h2 class="text-3xl sm:text-4xl font-black text-rose-600 tracking-wide mb-1">10 COMBO!</h2>
+        <p class="text-slate-700 font-bold text-lg sm:text-xl mb-4">10연속 마이크 성공 달성! 🎉</p>
+        <div class="bg-amber-100 border-2 border-amber-300 rounded-2xl px-5 py-3 mb-6 w-full shadow-inner">
+          <span class="text-2xl font-black text-amber-900">⚡ 보너스 +15점 획득!</span>
+        </div>
+        <button id="closeComboModalBtn" class="toy-btn w-full bg-[#03c75a] hover:bg-[#029f48] text-white font-black text-lg sm:text-xl py-3.5 rounded-2xl shadow-md">
+          신나게 계속하기 🚀
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- 헤더 영역 -->
   <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6 rounded-3xl shadow-lg border border-emerald-300 gap-3 mb-3">
@@ -133,8 +160,15 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 문장 및 백분율 배지 -->
+    <!-- 1번 박스: 좌측 상단 콤보 배지 & 우측 상단 정답률 배지 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
+      
+      <!-- 좌측 상단: 콤보 표시 (2연속 이상부터 등장) -->
+      <div id="comboBadge" style="display: none;" class="absolute top-3.5 left-4 sm:top-4 sm:left-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-gradient-to-r from-orange-500 to-rose-500 text-white border-orange-400 animate-pulse">
+        🔥 2 COMBO
+      </div>
+
+      <!-- 우측 상단: 정답률 배지 -->
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 --%
       </div>
@@ -269,6 +303,9 @@
         playTone(783.99, 'sine', 0.12, 0.16);
         playTone(1046.50, 'triangle', 0.35, 0.24);
       },
+      comboFanfare() {
+        [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f, i) => playTone(f, 'triangle', 0.25, i * 0.09));
+      },
       wrong() {
         playTone(320, 'sawtooth', 0.15, 0.0);
         playTone(220, 'sawtooth', 0.25, 0.12);
@@ -359,11 +396,14 @@
       coins: 0,
       totalMatchedCount: 0,
       giftCount: 0,
-      maxGauge: 500
+      maxGauge: 450 // 💡 총 게이지 450점
     };
 
     let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
     let isCurrentTrialRecorded = false;
+
+    // 🔥 콤보 상태 관리
+    let micComboCount = 0;
 
     let stage = 1;
     let isRecording = false;
@@ -373,6 +413,10 @@
     const giftCount = document.getElementById('giftCount');
     const koreanSentence = document.getElementById('koreanSentence');
     const accuracyBadge = document.getElementById('accuracyBadge');
+    const comboBadge = document.getElementById('comboBadge');
+
+    const comboModal = document.getElementById('comboModal');
+    const closeComboModalBtn = document.getElementById('closeComboModalBtn');
 
     const stage1Box = document.getElementById('stage1Box');
     const stage2Box = document.getElementById('stage2Box');
@@ -400,7 +444,7 @@
           cloudState.coins = Number(data.coins) || 0;
           cloudState.giftCount = Number(data.gifts) || 0;
           cloudState.totalMatchedCount = Number(data.matched) || 0;
-          cloudState.maxGauge = Number(data.maxGauge) || 500;
+          cloudState.maxGauge = 450;
           updateGaugeUI(false);
         }
       } catch (e) {}
@@ -438,6 +482,42 @@
       updateGaugeUI(true);
     }
 
+    // 콤보 UI 갱신 (연속 2번째부터 표시)
+    function updateComboUI() {
+      if (micComboCount >= 2) {
+        comboBadge.style.display = 'inline-block';
+        comboBadge.textContent = `🔥 ${micComboCount} COMBO`;
+      } else {
+        comboBadge.style.display = 'none';
+      }
+    }
+
+    function resetCombo() {
+      micComboCount = 0;
+      updateComboUI();
+    }
+
+    function trigger10ComboBonus() {
+      sound.comboFanfare();
+      confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 }, colors: ['#f59e0b', '#ef4444', '#ec4899', '#3b82f6'] });
+      
+      // +15점 보너스 지급
+      addGauge(15);
+      
+      // 모달 팝업 표시
+      comboModal.style.display = 'flex';
+      
+      // 카운트는 다시 0부터 시작
+      micComboCount = 0;
+      updateComboUI();
+    }
+
+    closeComboModalBtn.addEventListener('click', () => {
+      unlockAudioSystem();
+      sound.pop();
+      comboModal.style.display = 'none';
+    });
+
     function updateAccuracyBadgeUI(enSentence) {
       const stat = sentenceStatsDB[enSentence];
       if (!stat || stat.trials === 0) {
@@ -474,11 +554,7 @@
       updateAccuracyBadgeUI(q.en);
     }
 
-    /* 💡 [출제 우선순위 알고리즘 변경]
-       1순위: NEW 문장 (한 번도 안 푼 문장)
-       2순위: 틀린 적이 있는 문장 (정답률 0% ~ 99%)
-       3순위: 정답률 100% 문장
-    */
+    /* 💡 출제 우선순위: NEW ➔ 틀린 문장 ➔ 100% 마스터 문장 */
     function sortQuestionsByAccuracy(list) {
       return list.sort((a, b) => {
         const statA = sentenceStatsDB[a.en];
@@ -498,7 +574,6 @@
 
         if (tierA !== tierB) return tierA - tierB;
 
-        // 2순위 내부: 정답률이 더 낮은 문장이 먼저 출제
         if (tierA === 2) {
           if (rateA !== rateB) return rateA - rateB;
           return (statB.trials || 0) - (statA.trials || 0);
@@ -606,7 +681,17 @@
       if (isMatched) {
         spokenDebugText.textContent = `🎯 완벽해요: "${primarySpoken}"`;
         recordSentenceResult(true);
+
+        // 🔥 마이크 성공: 콤보 증가
+        micComboCount += 1;
+        updateComboUI();
+
         onAnswerCorrect(3);
+
+        // 10콤보 달성 시 특별 연출 및 보너스
+        if (micComboCount >= 10) {
+          trigger10ComboBonus();
+        }
       } else {
         sound.wrong();
       }
@@ -642,12 +727,14 @@
       unlockAudioSystem();
       sound.hint();
       recordSentenceResult(false);
+      resetCombo(); // 힌트 보면 콤보 리셋
       setGameStage(2);
     });
 
     giveUpBtn.addEventListener('click', () => {
       unlockAudioSystem();
       recordSentenceResult(false);
+      resetCombo(); // 💡 정답 보기 클릭 시 콤보 0으로 리셋
       setGameStage(3);
       revealAnswerDirectly();
     });
@@ -716,6 +803,7 @@
       koreanSentence.textContent = q.kr;
 
       updateAccuracyBadgeUI(q.en);
+      updateComboUI();
 
       assembledSlots.innerHTML = '';
       assembledSlots.appendChild(emptyGuideText);
@@ -822,6 +910,7 @@
       nextBtn.style.display = "inline-flex";
     }
 
+    // 💡 블록 정답 확인: 1포인트 지급 & 콤보 없음
     checkBlockBtn.addEventListener('click', () => {
       unlockAudioSystem();
       const q = questions[curIndex];
@@ -835,7 +924,8 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        onAnswerCorrect(1);
+        resetCombo(); // 블록 성공은 콤보 리셋
+        onAnswerCorrect(1); // 💡 2단계 블록은 1포인트
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
@@ -873,6 +963,7 @@
     }
 
     function restartGameWithResort() {
+      resetCombo();
       questions = sortQuestionsByAccuracy([...questions]);
       loadQuestion(0);
     }
