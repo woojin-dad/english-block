@@ -100,31 +100,31 @@
       border-color: #b91c1c !important;
     }
 
-    /* 콤보 팝업 애니메이션 */
+    /* 콤보 팝업 등장 애니메이션 */
     @keyframes comboPopIn {
       0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
       60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
       100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
     .animate-combo-pop {
-      animation: comboPopIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: comboPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
   </style>
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 relative">
 
-  <!-- 🔥 10콤보 달성 축하 모달 팝업 -->
-  <div id="comboModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="animate-combo-pop bg-gradient-to-b from-amber-300 via-orange-400 to-rose-500 p-1 rounded-3xl shadow-2xl max-w-sm w-full text-center">
+  <!-- 🔥 10콤보 달성 축하 모달 팝업 (자동 닫힘 적용) -->
+  <div id="comboModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 cursor-pointer">
+    <div class="animate-combo-pop bg-gradient-to-b from-amber-300 via-orange-400 to-rose-500 p-1 rounded-3xl shadow-2xl max-w-sm w-full text-center pointer-events-auto">
       <div class="bg-white rounded-[22px] p-6 sm:p-8 flex flex-col items-center">
         <div class="text-6xl sm:text-7xl mb-2 animate-bounce">🔥</div>
         <h2 class="text-3xl sm:text-4xl font-black text-rose-600 tracking-wide mb-1">10 COMBO!</h2>
         <p class="text-slate-700 font-bold text-lg sm:text-xl mb-4">10연속 마이크 성공 달성! 🎉</p>
-        <div class="bg-amber-100 border-2 border-amber-300 rounded-2xl px-5 py-3 mb-6 w-full shadow-inner">
+        <div class="bg-amber-100 border-2 border-amber-300 rounded-2xl px-5 py-3 mb-5 w-full shadow-inner">
           <span class="text-2xl font-black text-amber-900">⚡ 보너스 +15점 획득!</span>
         </div>
-        <button id="closeComboModalBtn" class="toy-btn w-full bg-[#03c75a] hover:bg-[#029f48] text-white font-black text-lg sm:text-xl py-3.5 rounded-2xl shadow-md">
-          신나게 계속하기 🚀
+        <button id="closeComboModalBtn" class="toy-btn w-full bg-[#03c75a] hover:bg-[#029f48] text-white font-black text-lg py-3 rounded-2xl shadow-md">
+          계속하기 🚀
         </button>
       </div>
     </div>
@@ -396,14 +396,15 @@
       coins: 0,
       totalMatchedCount: 0,
       giftCount: 0,
-      maxGauge: 450 // 💡 총 게이지 450점
+      maxGauge: 450
     };
 
     let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
     let isCurrentTrialRecorded = false;
 
-    // 🔥 콤보 상태 관리
+    // 🔥 콤보 상태 및 타이머 변수
     let micComboCount = 0;
+    let comboModalTimer = null;
 
     let stage = 1;
     let isRecording = false;
@@ -482,7 +483,6 @@
       updateGaugeUI(true);
     }
 
-    // 콤보 UI 갱신 (연속 2번째부터 표시)
     function updateComboUI() {
       if (micComboCount >= 2) {
         comboBadge.style.display = 'inline-block';
@@ -497,25 +497,42 @@
       updateComboUI();
     }
 
+    function hideComboModal() {
+      if (comboModalTimer) clearTimeout(comboModalTimer);
+      comboModal.style.display = 'none';
+    }
+
     function trigger10ComboBonus() {
       sound.comboFanfare();
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 }, colors: ['#f59e0b', '#ef4444', '#ec4899', '#3b82f6'] });
       
-      // +15점 보너스 지급
+      // +15점 보너스 즉시 지급
       addGauge(15);
       
-      // 모달 팝업 표시
+      // 모달 표시
       comboModal.style.display = 'flex';
+      
+      // 💡 1.8초 뒤 자동으로 팝업 닫힘
+      if (comboModalTimer) clearTimeout(comboModalTimer);
+      comboModalTimer = setTimeout(() => {
+        hideComboModal();
+      }, 1800);
       
       // 카운트는 다시 0부터 시작
       micComboCount = 0;
       updateComboUI();
     }
 
-    closeComboModalBtn.addEventListener('click', () => {
+    // 모달을 직접 누르거나 버튼을 눌러도 즉시 닫히도록 지원
+    comboModal.addEventListener('click', (e) => {
+      unlockAudioSystem();
+      hideComboModal();
+    });
+    closeComboModalBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       unlockAudioSystem();
       sound.pop();
-      comboModal.style.display = 'none';
+      hideComboModal();
     });
 
     function updateAccuracyBadgeUI(enSentence) {
@@ -554,7 +571,6 @@
       updateAccuracyBadgeUI(q.en);
     }
 
-    /* 💡 출제 우선순위: NEW ➔ 틀린 문장 ➔ 100% 마스터 문장 */
     function sortQuestionsByAccuracy(list) {
       return list.sort((a, b) => {
         const statA = sentenceStatsDB[a.en];
@@ -682,13 +698,12 @@
         spokenDebugText.textContent = `🎯 완벽해요: "${primarySpoken}"`;
         recordSentenceResult(true);
 
-        // 🔥 마이크 성공: 콤보 증가
+        // 마이크 성공: 콤보 증가
         micComboCount += 1;
         updateComboUI();
 
         onAnswerCorrect(3);
 
-        // 10콤보 달성 시 특별 연출 및 보너스
         if (micComboCount >= 10) {
           trigger10ComboBonus();
         }
@@ -727,14 +742,14 @@
       unlockAudioSystem();
       sound.hint();
       recordSentenceResult(false);
-      resetCombo(); // 힌트 보면 콤보 리셋
+      resetCombo();
       setGameStage(2);
     });
 
     giveUpBtn.addEventListener('click', () => {
       unlockAudioSystem();
       recordSentenceResult(false);
-      resetCombo(); // 💡 정답 보기 클릭 시 콤보 0으로 리셋
+      resetCombo();
       setGameStage(3);
       revealAnswerDirectly();
     });
@@ -910,7 +925,7 @@
       nextBtn.style.display = "inline-flex";
     }
 
-    // 💡 블록 정답 확인: 1포인트 지급 & 콤보 없음
+    // 블록 정답 확인: 1포인트 지급 & 콤보 리셋
     checkBlockBtn.addEventListener('click', () => {
       unlockAudioSystem();
       const q = questions[curIndex];
@@ -924,8 +939,8 @@
       const isSame = placed.length === q.tokens.length && placed.every((w, i) => w.toLowerCase() === q.tokens[i].toLowerCase());
 
       if (isSame) {
-        resetCombo(); // 블록 성공은 콤보 리셋
-        onAnswerCorrect(1); // 💡 2단계 블록은 1포인트
+        resetCombo();
+        onAnswerCorrect(1);
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
