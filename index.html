@@ -100,7 +100,7 @@
       border-color: #b91c1c !important;
     }
 
-    /* 콤보 팝업 등장 애니메이션 */
+    /* 콤보 팝업 애니메이션 */
     @keyframes comboPopIn {
       0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
       60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
@@ -113,7 +113,7 @@
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 relative">
 
-  <!-- 🔥 10콤보 달성 축하 모달 팝업 (자동 닫힘 적용) -->
+  <!-- 🔥 10콤보 달성 축하 모달 팝업 (1.8초 자동 닫힘) -->
   <div id="comboModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 cursor-pointer">
     <div class="animate-combo-pop bg-gradient-to-b from-amber-300 via-orange-400 to-rose-500 p-1 rounded-3xl shadow-2xl max-w-sm w-full text-center pointer-events-auto">
       <div class="bg-white rounded-[22px] p-6 sm:p-8 flex flex-col items-center">
@@ -137,7 +137,8 @@
         🧩
       </div>
       <div>
-        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide">
+        <!-- 💡 5번 터치 시 리셋되는 타이틀 -->
+        <h1 id="appTitle" class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide cursor-pointer active:scale-95 transition-transform" title="5번 연속 터치하면 정답률 기록 리셋">
           말문 팡팡
         </h1>
         <p class="text-xs text-slate-500 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
@@ -163,9 +164,9 @@
     <!-- 1번 박스: 좌측 상단 콤보 배지 & 우측 상단 정답률 배지 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
       
-      <!-- 좌측 상단: 콤보 표시 (2연속 이상부터 등장) -->
+      <!-- 좌측 상단: 콤보 표시 (1콤보부터 즉시 등장) -->
       <div id="comboBadge" style="display: none;" class="absolute top-3.5 left-4 sm:top-4 sm:left-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-gradient-to-r from-orange-500 to-rose-500 text-white border-orange-400 animate-pulse">
-        🔥 2 COMBO
+        🔥 1 COMBO
       </div>
 
       <!-- 우측 상단: 정답률 배지 -->
@@ -410,6 +411,7 @@
     let isRecording = false;
     let recognition = null;
 
+    const appTitle = document.getElementById('appTitle');
     const gaugeFill = document.getElementById('gaugeFill');
     const giftCount = document.getElementById('giftCount');
     const koreanSentence = document.getElementById('koreanSentence');
@@ -483,6 +485,7 @@
       updateGaugeUI(true);
     }
 
+    // 콤보 UI 갱신 (1콤보부터 즉시 표시)
     function updateComboUI() {
       if (micComboCount >= 1) {
         comboBadge.style.display = 'inline-block';
@@ -506,13 +509,13 @@
       sound.comboFanfare();
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 }, colors: ['#f59e0b', '#ef4444', '#ec4899', '#3b82f6'] });
       
-      // +15점 보너스 즉시 지급
+      // +15점 보너스 지급
       addGauge(15);
       
       // 모달 표시
       comboModal.style.display = 'flex';
       
-      // 💡 1.8초 뒤 자동으로 팝업 닫힘
+      // 1.8초 뒤 자동으로 팝업 닫힘
       if (comboModalTimer) clearTimeout(comboModalTimer);
       comboModalTimer = setTimeout(() => {
         hideComboModal();
@@ -523,8 +526,7 @@
       updateComboUI();
     }
 
-    // 모달을 직접 누르거나 버튼을 눌러도 즉시 닫히도록 지원
-    comboModal.addEventListener('click', (e) => {
+    comboModal.addEventListener('click', () => {
       unlockAudioSystem();
       hideComboModal();
     });
@@ -571,6 +573,7 @@
       updateAccuracyBadgeUI(q.en);
     }
 
+    /* 💡 출제 우선순위: 1순위 NEW ➔ 2순위 틀린 문장 ➔ 3순위 100% 마스터 */
     function sortQuestionsByAccuracy(list) {
       return list.sort((a, b) => {
         const statA = sentenceStatsDB[a.en];
@@ -925,7 +928,6 @@
       nextBtn.style.display = "inline-flex";
     }
 
-    // 블록 정답 확인: 1포인트 지급 & 콤보 리셋
     checkBlockBtn.addEventListener('click', () => {
       unlockAudioSystem();
       const q = questions[curIndex];
@@ -1056,6 +1058,28 @@
       })));
       loadQuestion(0);
     }
+
+    /* ==========================================================================
+       🔒 히든 관리자 기능: 제목 '말문 팡팡' 5연속 터치 시 정답률 리셋
+       ========================================================================== */
+    let titleClickCount = 0;
+    let titleTimer = null;
+
+    appTitle.addEventListener('click', () => {
+      titleClickCount++;
+      clearTimeout(titleTimer);
+      titleTimer = setTimeout(() => { titleClickCount = 0; }, 1500); // 1.5초 내 5연속 터치 필요
+
+      if (titleClickCount >= 5) {
+        unlockAudioSystem();
+        sound.pop();
+        if (confirm("말문 팡팡의 정답률 기록을 모두 초기화할까요?\n(매칭게임 및 게이지/선물 상자는 안전하게 유지됩니다.)")) {
+          localStorage.removeItem('block_sentence_stats');
+          location.reload();
+        }
+        titleClickCount = 0;
+      }
+    });
 
     window.addEventListener('DOMContentLoaded', () => {
       initSTT();
