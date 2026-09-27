@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>말문 팡팡 🧩🎤</title>
+  <title>말문 칭칭 🧩🎤</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -139,7 +139,7 @@
       <div>
         <!-- 💡 5번 터치 시 리셋되는 타이틀 -->
         <h1 id="appTitle" class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide cursor-pointer active:scale-95 transition-transform" title="5번 연속 터치하면 정답률 기록 리셋">
-          말문 팡팡
+          말문 칭칭
         </h1>
         <p class="text-xs text-slate-500 font-sans">입으로 먼저 말해보고, 모르면 블록 힌트!</p>
       </div>
@@ -1009,7 +1009,7 @@
       stage2Box.style.display = "flex";
       assembledSlots.innerHTML = `
         <div class="w-full py-8 text-center">
-          <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 말문 팡팡 마스터! 🏆</p>
+          <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 말문 칭칭 마스터! 🏆</p>
           <p class="text-slate-500 mb-4 font-sans">누적 선물: ${cloudState.giftCount}개 🎁</p>
           <button onclick="restartGameWithResort()" class="toy-btn bg-[#03c75a] text-white font-bold text-lg px-8 py-3 rounded-2xl">
             약점 문장부터 다시 도전하기 🚀
@@ -1104,7 +1104,7 @@
     }
 
     /* ==========================================================================
-       🔒 히든 관리자 기능: 제목 '말문 팡팡' 5연속 터치 시 정답률 리셋
+       🔒 히든 관리자 기능: 제목 '말문 칭칭' 5연속 터치 시 정답률 리셋
        ========================================================================== */
     let titleClickCount = 0;
     let titleTimer = null;
@@ -1117,7 +1117,7 @@
       if (titleClickCount >= 5) {
         unlockAudioSystem();
         sound.pop();
-        if (confirm("말문 팡팡의 정답률 기록을 모두 초기화할까요?\n(매칭게임 및 게이지/선물 상자는 안전하게 유지됩니다.)")) {
+        if (confirm("말문 칭칭의 정답률 기록을 모두 초기화할까요?\n(매칭게임 및 게이지/선물 상자는 안전하게 유지됩니다.)")) {
           localStorage.removeItem('block_sentence_stats');
           location.reload();
         }
