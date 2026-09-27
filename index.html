@@ -199,6 +199,18 @@
       </button>
     </div>
 
+    <!-- 💡 2번 UI 전용 박스: 마이크 성공 시 정답 블록 쇼케이스 영역 -->
+    <div id="speakingSuccessBox" style="display: none;" class="bg-white rounded-3xl p-5 sm:p-8 shadow-lg border-2 border-emerald-300 flex flex-col items-center justify-center text-center gap-3 animate-combo-pop">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🎉</span>
+        <span class="text-base sm:text-lg font-black text-emerald-800">입으로 문장을 완벽하게 완성했어요!</span>
+      </div>
+      <!-- 완성된 영어 단어 블록들이 진열되는 공간 -->
+      <div id="speakingSuccessBlocks" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-3 bg-emerald-50/60 rounded-2xl border border-emerald-200 w-full min-h-[70px]">
+      </div>
+      <p class="text-xs text-slate-400 font-sans mt-0.5">블록을 누르면 발음을 다시 들을 수 있어요 🔊</p>
+    </div>
+
     <!-- 3번 박스 (2단계): 블록 조립 컨테이너 -->
     <div id="stage2Box" style="display: none;" class="flex flex-col gap-3.5">
       <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
@@ -422,6 +434,9 @@
     const closeComboModalBtn = document.getElementById('closeComboModalBtn');
 
     const stage1Box = document.getElementById('stage1Box');
+    const speakingSuccessBox = document.getElementById('speakingSuccessBox');
+    const speakingSuccessBlocks = document.getElementById('speakingSuccessBlocks');
+
     const stage2Box = document.getElementById('stage2Box');
     const assembledSlots = document.getElementById('assembledSlots');
     const emptyGuideText = document.getElementById('emptyGuideText');
@@ -705,7 +720,9 @@
         micComboCount += 1;
         updateComboUI();
 
-        onAnswerCorrect(3);
+        // 💡 2번 UI: 마이크 정답 시 쇼케이스 블록들을 진열하고 화면 전환
+        displaySpeakingSuccessBlocks();
+        onAnswerCorrect(3, true);
 
         if (micComboCount >= 10) {
           trigger10ComboBonus();
@@ -715,6 +732,16 @@
       }
     }
 
+    /* 💡 2번 UI: 마이크 성공 시 정답 블록 쇼케이스 생성 함수 */
+    function displaySpeakingSuccessBlocks() {
+      const q = questions[curIndex];
+      speakingSuccessBlocks.innerHTML = '';
+      q.tokens.forEach((word, idx) => {
+        const blk = makeBlockElement(word, idx);
+        speakingSuccessBlocks.appendChild(blk);
+      });
+    }
+
     /* ==========================================================================
        5. 단계 컨트롤
        ========================================================================== */
@@ -722,19 +749,29 @@
       stage = newStage;
       if (stage === 1) {
         stage1Box.style.display = "flex";
+        speakingSuccessBox.style.display = "none";
         stage2Box.style.display = "none";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
         listenAgainBtn.style.display = "none";
       } else if (stage === 2) {
         stage1Box.style.display = "none";
+        speakingSuccessBox.style.display = "none";
         stage2Box.style.display = "flex";
         checkBlockBtn.style.display = "inline-flex";
         giveUpBtn.style.display = "inline-flex";
         listenAgainBtn.style.display = "none";
-      } else if (stage === 3) {
+      } else if (stage === 3) { // 정답 보기 모드
         stage1Box.style.display = "none";
+        speakingSuccessBox.style.display = "none";
         stage2Box.style.display = "flex";
+        checkBlockBtn.style.display = "none";
+        giveUpBtn.style.display = "none";
+        listenAgainBtn.style.display = "inline-flex";
+      } else if (stage === 4) { // 💡 2번 UI: 마이크 정답 성공 모드
+        stage1Box.style.display = "none";
+        speakingSuccessBox.style.display = "flex";
+        stage2Box.style.display = "none";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
         listenAgainBtn.style.display = "inline-flex";
@@ -850,7 +887,8 @@
       el.innerHTML = `<span>${word}</span>`;
 
       el.addEventListener('click', () => {
-        if (stage === 3) {
+        // 정답 보기(3) 또는 마이크 정답 쇼케이스(4) 상태일 때는 블록 터치 시 발음 재생
+        if (stage === 3 || stage === 4) {
           speakText(questions[curIndex].en);
           return;
         }
@@ -870,7 +908,7 @@
       });
 
       el.addEventListener('dragstart', (e) => {
-        if (stage === 3) return;
+        if (stage === 3 || stage === 4) return;
         unlockAudioSystem();
         sound.pop();
         el.classList.add('opacity-40');
@@ -905,7 +943,7 @@
     });
 
     clearBtn.addEventListener('click', () => {
-      if (stage === 3) return;
+      if (stage === 3 || stage === 4) return;
       unlockAudioSystem();
       sound.pop();
       const placed = Array.from(assembledSlots.querySelectorAll('.word-block'));
@@ -913,7 +951,7 @@
       emptyGuideText.style.display = 'flex';
     });
 
-    function onAnswerCorrect(gaugePoints) {
+    function onAnswerCorrect(gaugePoints, isSpeakingSuccess = false) {
       unlockAudioSystem();
       sound.success();
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
@@ -921,9 +959,14 @@
       addGauge(gaugePoints);
       speakText(questions[curIndex].en);
 
-      stage1Box.style.display = "none";
-      checkBlockBtn.style.display = "none";
-      giveUpBtn.style.display = "none";
+      if (isSpeakingSuccess) {
+        setGameStage(4); // 💡 마이크 성공 전용 쇼케이스 모드로 전환
+      } else {
+        stage1Box.style.display = "none";
+        checkBlockBtn.style.display = "none";
+        giveUpBtn.style.display = "none";
+      }
+
       listenAgainBtn.style.display = "inline-flex";
       nextBtn.style.display = "inline-flex";
     }
@@ -942,7 +985,7 @@
 
       if (isSame) {
         resetCombo();
-        onAnswerCorrect(1);
+        onAnswerCorrect(1, false);
       } else {
         sound.wrong();
         assembledSlots.classList.add('animate-shake');
@@ -962,6 +1005,7 @@
 
       koreanSentence.textContent = "🎉 모든 미션을 완료했어요!";
       stage1Box.style.display = "none";
+      speakingSuccessBox.style.display = "none";
       stage2Box.style.display = "flex";
       assembledSlots.innerHTML = `
         <div class="w-full py-8 text-center">
