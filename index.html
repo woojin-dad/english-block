@@ -109,6 +109,16 @@
     .animate-combo-pop {
       animation: comboPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
+
+    /* 마이크 카운트 숫자 증가 팝 애니메이션 */
+    @keyframes countPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.45); color: #e11d48; }
+      100% { transform: scale(1); }
+    }
+    .animate-count-pop {
+      animation: countPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
   </style>
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 relative">
@@ -145,15 +155,25 @@
       </div>
     </div>
 
-    <!-- ⚡ 매칭게임 연동 게이지 & 선물 상자 -->
-    <div class="flex items-center gap-2 sm:gap-3 ml-auto bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-inner">
-      <span class="text-lg">⚡</span>
-      <div class="gauge-bg">
-        <div id="gaugeFill"></div>
+    <!-- 우측 배지 그룹 (오늘 마이크 카운터 & 게이지) -->
+    <div class="flex items-center gap-2 sm:gap-3 ml-auto">
+      <!-- 🎤 오늘 마이크 성공 카운터 -->
+      <div class="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-2xl shadow-inner font-black text-rose-600 text-sm sm:text-base select-none" title="오늘 마이크 성공 횟수 (자정 자동 리셋)">
+        <span class="text-base sm:text-lg">🎤</span>
+        <span class="text-xs text-rose-400 font-sans">오늘</span>
+        <span id="todayMicCount" class="font-eng font-bold text-rose-600 text-base sm:text-lg min-w-[14px] text-center inline-block">0</span>
       </div>
-      <div class="font-black text-slate-800 text-base sm:text-lg flex items-center gap-1 ml-1" title="선물 상자">
-        <span>🎁</span>
-        <span id="giftCount" class="text-emerald-700">0</span>
+
+      <!-- ⚡ 매칭게임 연동 게이지 & 선물 상자 -->
+      <div class="flex items-center gap-2 sm:gap-3 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-inner">
+        <span class="text-lg">⚡</span>
+        <div class="gauge-bg">
+          <div id="gaugeFill"></div>
+        </div>
+        <div class="font-black text-slate-800 text-base sm:text-lg flex items-center gap-1 ml-1" title="선물 상자">
+          <span>🎁</span>
+          <span id="giftCount" class="text-emerald-700">0</span>
+        </div>
       </div>
     </div>
   </header>
@@ -426,6 +446,7 @@
     const appTitle = document.getElementById('appTitle');
     const gaugeFill = document.getElementById('gaugeFill');
     const giftCount = document.getElementById('giftCount');
+    const todayMicCount = document.getElementById('todayMicCount');
     const koreanSentence = document.getElementById('koreanSentence');
     const accuracyBadge = document.getElementById('accuracyBadge');
     const comboBadge = document.getElementById('comboBadge');
@@ -453,6 +474,46 @@
     const listenAgainBtn = document.getElementById('listenAgainBtn');
     const nextBtn = document.getElementById('nextBtn');
     const clearBtn = document.getElementById('clearBtn');
+
+    /* ==========================================================================
+       🎤 오늘 마이크 성공 카운터 시스템 (자정 자동 리셋 & 로컬 영구 저장)
+       ========================================================================== */
+    function getTodayKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    function initTodayMicCounter() {
+      const today = getTodayKey();
+      const saved = JSON.parse(localStorage.getItem('today_mic_stats')) || {};
+      
+      // 날짜가 바뀌었으면 오늘 날짜로 0 초기화
+      if (saved.date !== today) {
+        localStorage.setItem('today_mic_stats', JSON.stringify({ date: today, count: 0 }));
+        todayMicCount.textContent = "0";
+      } else {
+        todayMicCount.textContent = saved.count || 0;
+      }
+    }
+
+    function incrementTodayMicCount() {
+      const today = getTodayKey();
+      let saved = JSON.parse(localStorage.getItem('today_mic_stats')) || {};
+      
+      if (saved.date !== today) {
+        saved = { date: today, count: 0 };
+      }
+      
+      saved.count = (saved.count || 0) + 1;
+      localStorage.setItem('today_mic_stats', JSON.stringify(saved));
+      
+      todayMicCount.textContent = saved.count;
+      
+      // 숫자 통통 튀는 Pop 애니메이션 적용
+      todayMicCount.classList.remove('animate-count-pop');
+      void todayMicCount.offsetWidth; // 리플로우 강제 트리거
+      todayMicCount.classList.add('animate-count-pop');
+    }
 
     async function syncFromCloud() {
       try {
@@ -598,9 +659,9 @@
         const rateB = statB && statB.trials > 0 ? (statB.hits / statB.trials) * 100 : -1;
 
         const getPriorityTier = (rate) => {
-          if (rate === -1) return 1;                   // 1순위: NEW
+          if (rate === -1) return 1;                    // 1순위: NEW
           if (rate >= 0 && rate < 100) return 2;        // 2순위: 틀린 적이 있는 문장
-          return 3;                                    // 3순위: 정답률 100%
+          return 3;                                     // 3순위: 정답률 100%
         };
 
         const tierA = getPriorityTier(rateA);
@@ -716,9 +777,10 @@
         spokenDebugText.textContent = `🎯 완벽해요: "${primarySpoken}"`;
         recordSentenceResult(true);
 
-        // 마이크 성공: 콤보 증가
+        // 마이크 성공: 콤보 증가 및 오늘 마이크 성공 횟수 증가
         micComboCount += 1;
         updateComboUI();
+        incrementTodayMicCount();
 
         // 💡 2번 UI: 마이크 정답 시 쇼케이스 블록들을 진열하고 화면 전환
         displaySpeakingSuccessBlocks();
@@ -1126,6 +1188,7 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
+      initTodayMicCounter();
       initSTT();
       loadDataFromSheet();
     });
