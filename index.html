@@ -793,15 +793,21 @@
     }
 
     /* ==========================================================================
-       4. Web Speech STT (아이패드 에러 원인 추적 & 완전 안정화 버전)
+       4. Web Speech STT (아이패드 aborted 락 완전 해제 버전)
        ========================================================================== */
     function stopSTT() {
       isRecording = false;
       mainMicBtn.classList.remove('mic-active');
       mainMicIcon.textContent = "🎤";
       mainMicLabel.textContent = "마이크 누르고 말하기";
+      
       if (recognition) {
-        try { recognition.abort(); } catch(e) {}
+        // 이벤트 핸들러를 먼저 떼어내어 사파리의 사후 abort 에러를 무시
+        recognition.onstart = null;
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        try { recognition.stop(); } catch(e) {}
         recognition = null;
       }
     }
@@ -809,30 +815,25 @@
     function startSTT() {
       const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechClass) {
-        alert("🚨 이 브라우저는 음성 인식을 지원하지 않습니다. 사파리(Safari) 앱을 사용해 주세요.");
+        alert("이 브라우저는 음성 인식을 지원하지 않습니다. 사파리(Safari) 앱을 사용해 주세요.");
         return;
       }
 
-      // 오디오 충돌 방지: 실행 중인 TTS 즉시 취소
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-
-      // 기존 인스턴스 깔끔히 종료 후 매번 새 객체 생성 (좀비 인스턴스 방지)
+      // 기존 인스턴스 조용히 정리 (abort 대신 stop 호출로 세션 유지)
       if (recognition) {
-        try { recognition.abort(); } catch(e) {}
-        recognition = null;
+        stopSTT();
       }
 
       try {
-        recognition = new SpeechClass();
+        const instance = new SpeechClass();
+        recognition = instance;
         recognition.lang = 'en-US';
         recognition.interimResults = false;
         recognition.maxAlternatives = 3;
 
         recognition.onstart = () => {
           isRecording = true;
-          sound.mic(); // 마이크 켜질 때 삑! 비프음
+          sound.mic(); // 마이크 활성화 비프음
           mainMicBtn.classList.add('mic-active');
           mainMicIcon.textContent = "🛑";
           mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
@@ -847,9 +848,12 @@
           handleSpokenResults(spokenList);
         };
 
-        // 💡 핵심: 아이패드 에러 발생 시 원인 단어를 즉시 화면 팝업으로 안내
         recognition.onerror = (e) => {
-          alert(`[마이크 에러]: ${e.error}`);
+          console.warn("STT Error:", e.error);
+          // aborted는 무시하고 다시 누를 수 있게 종료만 처리
+          if (e.error !== 'aborted' && e.error !== 'no-speech') {
+            alert(`[마이크 에러]: ${e.error}`);
+          }
           stopSTT();
         };
 
@@ -859,7 +863,7 @@
 
         recognition.start();
       } catch (err) {
-        alert(`[시작 실패 예외]: ${err.message || err}`);
+        console.warn("STT 시작 예외:", err);
         stopSTT();
       }
     }
