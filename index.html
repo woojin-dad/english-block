@@ -230,7 +230,6 @@
         🧩
       </div>
       <div>
-        <!-- 💡 5번 터치 시 학습 진단 대시보드가 열리는 타이틀 -->
         <h1 id="appTitle" class="text-xl sm:text-2xl font-black text-slate-900 tracking-wide cursor-pointer active:scale-95 transition-transform" title="5번 연속 터치하면 학습 진단 대시보드 열림">
           말문 칭칭
         </h1>
@@ -238,7 +237,7 @@
       </div>
     </div>
 
-    <!-- 우측 배지 그룹 (오늘 마이크 성공문장수/오늘 푼 문장수 & 게이지) -->
+    <!-- 우측 배지 그룹 -->
     <div class="flex items-center gap-2 sm:gap-3 ml-auto">
       <!-- 🎤 오늘 마이크 성공 문장 / 시도한 문장 카운터 -->
       <div class="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-2xl shadow-inner font-black text-rose-600 text-sm sm:text-base select-none" title="오늘 마이크 성공 문장 수 / 오늘 푼 문장 수 (자정 자동 리셋)">
@@ -263,15 +262,12 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스: 좌측 상단 콤보 배지 & 우측 상단 정답률 배지 -->
+    <!-- 1번 박스 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
-      
-      <!-- 좌측 상단: 콤보 표시 (1콤보부터 즉시 등장) -->
       <div id="comboBadge" style="display: none;" class="absolute top-3.5 left-4 sm:top-4 sm:left-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-gradient-to-r from-orange-500 to-rose-500 text-white border-orange-400 animate-pulse">
         🔥 1 COMBO
       </div>
 
-      <!-- 우측 상단: 정답률 배지 -->
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 --%
       </div>
@@ -292,10 +288,8 @@
         <span id="mainMicLabel">마이크 누르고 말하기</span>
       </button>
 
-      <!-- 내가 방금 말한 내용을 살짝 보여주는 디버깅 힌트 -->
       <div id="spokenDebugText" class="text-xs font-sans text-slate-400 min-h-[18px]"></div>
 
-      <!-- 2단계 진입 버튼 -->
       <button id="openBlockBtn" class="text-sm text-[#029f48] hover:text-[#02833b] bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-2xl border border-emerald-300 font-black transition flex items-center gap-1.5 shadow-sm">
         <span>🧩 잘 모르겠어요 (단어 블록 보기)</span>
       </button>
@@ -307,7 +301,6 @@
         <span class="text-xl">🎉</span>
         <span class="text-base sm:text-lg font-black text-emerald-800">입으로 문장을 완벽하게 완성했어요!</span>
       </div>
-      <!-- 완성된 영어 단어 블록들이 진열되는 공간 -->
       <div id="speakingSuccessBlocks" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-3 bg-emerald-50/60 rounded-2xl border border-emerald-200 w-full min-h-[70px]">
       </div>
       <p class="text-xs text-slate-400 font-sans mt-0.5">블록을 누르면 발음을 다시 들을 수 있어요 🔊</p>
@@ -571,7 +564,7 @@
 
     /* ==========================================================================
        🎤 오늘 마이크 성공 문장 / 시도한 문장 카운터 (자정 자동 리셋 & 로컬 영구 저장)
-       ========================================================================== */
+       ========================================================================= */
     function getTodayKey() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -594,7 +587,6 @@
       }
     }
 
-    // 문장당 딱 1회 호출: isMicSuccess가 true이면 마이크 성공, false이면 블록/정답보기로 해결
     function recordTodaySentenceOutcome(isMicSuccess) {
       const today = getTodayKey();
       let saved = JSON.parse(localStorage.getItem('today_mic_stats')) || {};
@@ -603,15 +595,14 @@
         saved = { date: today, hits: 0, total: 0 };
       }
       
-      saved.total = (saved.total || 0) + 1; // 오늘 푼 문장 수 +1
+      saved.total = (saved.total || 0) + 1;
       if (isMicSuccess) {
-        saved.hits = (saved.hits || 0) + 1; // 마이크로 맞힌 문장 수 +1
+        saved.hits = (saved.hits || 0) + 1;
       }
       
       localStorage.setItem('today_mic_stats', JSON.stringify(saved));
       updateTodayMicBadgeUI(saved.hits, saved.total);
       
-      // 숫자 Pop 애니메이션
       todayMicCount.classList.remove('animate-count-pop');
       void todayMicCount.offsetWidth;
       todayMicCount.classList.add('animate-count-pop');
@@ -736,7 +727,6 @@
       const q = questions[curIndex];
       if (!q) return;
 
-      // 💡 오늘 학습 문장 집계 (문장당 딱 1번 반영)
       recordTodaySentenceOutcome(isSuccess);
 
       if (!sentenceStatsDB[q.en]) {
@@ -803,61 +793,83 @@
     }
 
     /* ==========================================================================
-       4. Web Speech STT
+       4. Web Speech STT (아이패드/사파리 완벽 안정화 패치 버전)
        ========================================================================== */
-    function initSTT() {
-      const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechClass) {
-        mainMicBtn.classList.add('opacity-50');
-        mainMicBtn.title = "사파리(Safari) 또는 크롬(Chrome) 브라우저를 사용해 주세요.";
-        return;
-      }
-
-      recognition = new SpeechClass();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 3;
-
-      recognition.onstart = () => {
-        isRecording = true;
-        sound.mic();
-        mainMicBtn.classList.add('mic-active');
-        mainMicIcon.textContent = "🛑";
-        mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
-        spokenDebugText.textContent = "";
-      };
-
-      recognition.onresult = (e) => {
-        const spokenList = [];
-        for (let i = 0; i < e.results[0].length; i++) {
-          spokenList.push(e.results[0][i].transcript);
-        }
-        handleSpokenResults(spokenList);
-      };
-
-      recognition.onerror = () => { stopSTT(); };
-      recognition.onend = () => { stopSTT(); };
-    }
-
-    function toggleSTT() {
-      unlockAudioSystem();
-      if (!recognition) {
-        alert("사파리(Safari) 또는 크롬(Chrome) 브라우저를 사용해 주세요!");
-        return;
-      }
-      if (isRecording) {
-        recognition.stop();
-        stopSTT();
-      } else {
-        try { recognition.start(); } catch (e) { recognition.stop(); }
-      }
-    }
-
     function stopSTT() {
       isRecording = false;
       mainMicBtn.classList.remove('mic-active');
       mainMicIcon.textContent = "🎤";
       mainMicLabel.textContent = "마이크 누르고 말하기";
+      if (recognition) {
+        try { recognition.abort(); } catch(e) {}
+        recognition = null;
+      }
+    }
+
+    function startSTT() {
+      const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechClass) {
+        alert("사파리(Safari) 또는 크롬(Chrome) 브라우저를 사용해 주세요!");
+        return;
+      }
+
+      // 💡 1. TTS가 혹시 돌고 있다면 즉시 취소하여 아이패드 오디오 세션 락 해제
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      // 💡 2. 기존 인스턴스 깔끔하게 정리 후 매번 새로 생성 (아이패드 좀비 인스턴스 방지)
+      if (recognition) {
+        try { recognition.abort(); } catch(e) {}
+        recognition = null;
+      }
+
+      try {
+        recognition = new SpeechClass();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 3;
+
+        recognition.onstart = () => {
+          isRecording = true;
+          sound.mic();
+          mainMicBtn.classList.add('mic-active');
+          mainMicIcon.textContent = "🛑";
+          mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
+          spokenDebugText.textContent = "";
+        };
+
+        recognition.onresult = (e) => {
+          const spokenList = [];
+          for (let i = 0; i < e.results[0].length; i++) {
+            spokenList.push(e.results[0][i].transcript);
+          }
+          handleSpokenResults(spokenList);
+        };
+
+        recognition.onerror = (e) => {
+          console.warn("STT Error:", e.error);
+          stopSTT();
+        };
+
+        recognition.onend = () => {
+          stopSTT();
+        };
+
+        recognition.start();
+      } catch (err) {
+        console.warn("STT 시작 실패:", err);
+        stopSTT();
+      }
+    }
+
+    function toggleSTT() {
+      unlockAudioSystem();
+      if (isRecording) {
+        stopSTT();
+      } else {
+        startSTT();
+      }
     }
 
     mainMicBtn.addEventListener('click', toggleSTT);
@@ -939,6 +951,7 @@
 
     openBlockBtn.addEventListener('click', () => {
       unlockAudioSystem();
+      stopSTT();
       sound.hint();
       recordSentenceResult(false);
       resetCombo();
@@ -947,6 +960,7 @@
 
     giveUpBtn.addEventListener('click', () => {
       unlockAudioSystem();
+      stopSTT();
       recordSentenceResult(false);
       resetCombo();
       setGameStage(3);
@@ -998,6 +1012,8 @@
     }
 
     function loadQuestion(idx) {
+      stopSTT();
+
       if (questions.length === 0) {
         koreanSentence.textContent = "문장을 불러올 수 없습니다. 구글 시트를 확인해주세요.";
         return;
@@ -1266,6 +1282,7 @@
        ========================================================================== */
     function openDashboard() {
       unlockAudioSystem();
+      stopSTT();
       sound.pop();
       renderDashboard();
       dashboardModal.style.display = 'flex';
@@ -1435,7 +1452,6 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       initTodayMicCounter();
-      initSTT();
       loadDataFromSheet();
     });
   </script>
