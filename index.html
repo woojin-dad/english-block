@@ -564,7 +564,7 @@
 
     /* ==========================================================================
        🎤 오늘 마이크 성공 문장 / 시도한 문장 카운터 (자정 자동 리셋 & 로컬 영구 저장)
-       ========================================================================= */
+       ========================================================================== */
     function getTodayKey() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -793,7 +793,7 @@
     }
 
     /* ==========================================================================
-       4. Web Speech STT (아이패드/사파리 완벽 안정화 패치 버전)
+       4. Web Speech STT (아이패드 에러 원인 추적 & 완전 안정화 버전)
        ========================================================================== */
     function stopSTT() {
       isRecording = false;
@@ -809,16 +809,16 @@
     function startSTT() {
       const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechClass) {
-        alert("사파리(Safari) 또는 크롬(Chrome) 브라우저를 사용해 주세요!");
+        alert("🚨 이 브라우저는 음성 인식을 지원하지 않습니다. 사파리(Safari) 앱을 사용해 주세요.");
         return;
       }
 
-      // 💡 1. TTS가 혹시 돌고 있다면 즉시 취소하여 아이패드 오디오 세션 락 해제
+      // 오디오 충돌 방지: 실행 중인 TTS 즉시 취소
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
 
-      // 💡 2. 기존 인스턴스 깔끔하게 정리 후 매번 새로 생성 (아이패드 좀비 인스턴스 방지)
+      // 기존 인스턴스 깔끔히 종료 후 매번 새 객체 생성 (좀비 인스턴스 방지)
       if (recognition) {
         try { recognition.abort(); } catch(e) {}
         recognition = null;
@@ -832,11 +832,11 @@
 
         recognition.onstart = () => {
           isRecording = true;
-          sound.mic();
+          sound.mic(); // 마이크 켜질 때 삑! 비프음
           mainMicBtn.classList.add('mic-active');
           mainMicIcon.textContent = "🛑";
           mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
-          spokenDebugText.textContent = "";
+          spokenDebugText.textContent = "🎤 음성 대기 중...";
         };
 
         recognition.onresult = (e) => {
@@ -847,8 +847,9 @@
           handleSpokenResults(spokenList);
         };
 
+        // 💡 핵심: 아이패드 에러 발생 시 원인 단어를 즉시 화면 팝업으로 안내
         recognition.onerror = (e) => {
-          console.warn("STT Error:", e.error);
+          alert(`[마이크 에러]: ${e.error}`);
           stopSTT();
         };
 
@@ -858,7 +859,7 @@
 
         recognition.start();
       } catch (err) {
-        console.warn("STT 시작 실패:", err);
+        alert(`[시작 실패 예외]: ${err.message || err}`);
         stopSTT();
       }
     }
