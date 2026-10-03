@@ -306,7 +306,7 @@
       <p class="text-xs text-slate-400 font-sans mt-0.5">블록을 누르면 발음을 다시 들을 수 있어요 🔊</p>
     </div>
 
-    <!-- 3번 박스 (2단계): 블록 조립 컨테이너 -->
+    <!-- 3번 박스 (2단계 & 정답 확인 후 따라읽기): 블록 조립 컨테이너 -->
     <div id="stage2Box" style="display: none;" class="flex flex-col gap-3.5">
       <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
         <div class="flex items-center justify-between mb-2">
@@ -314,7 +314,7 @@
             <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
               <span>🎯</span> 내가 만든 문장
             </span>
-            <span class="text-xs text-slate-400 font-sans hidden sm:inline">(블록을 누르면 보관함으로 돌아갑니다)</span>
+            <span id="slotHelperText" class="text-xs text-slate-400 font-sans hidden sm:inline">(블록을 누르면 보관함으로 돌아갑니다)</span>
           </div>
           <button id="clearBtn" class="text-xs text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-xl transition flex items-center gap-1">
             <span>🔄</span> 비우기
@@ -329,7 +329,8 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
+      <!-- 단어 블록 보관함 영역 (정답 보기 시 숨겨짐) -->
+      <div id="wordPoolContainer" class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
         <div class="flex items-center justify-between mb-2.5">
           <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
             <span>📦</span> 단어 블록 보관함
@@ -338,6 +339,18 @@
         </div>
         <div id="wordPool" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 min-h-[90px] p-3 bg-slate-50 rounded-2xl border border-slate-200">
         </div>
+      </div>
+
+      <!-- 💡 정답 보고 따라읽기 전용 안내 및 마이크 영역 -->
+      <div id="shadowingContainer" style="display: none;" class="bg-amber-50 rounded-3xl p-5 shadow-lg border-2 border-amber-300 flex flex-col items-center justify-center text-center gap-3">
+        <p class="text-base sm:text-lg font-black text-amber-950">
+          정답 문장을 보고 큰 소리로 따라 말해보세요! 📢
+        </p>
+        <button id="shadowMicBtn" class="toy-btn bg-rose-500 hover:bg-rose-600 text-white font-black text-base sm:text-lg px-8 py-3.5 rounded-2xl flex items-center gap-2.5 shadow-md transition-all">
+          <span id="shadowMicIcon" class="text-2xl">🎤</span>
+          <span id="shadowMicLabel">마이크 켜고 따라 읽기</span>
+        </button>
+        <div id="shadowDebugText" class="text-xs font-sans text-amber-700 min-h-[18px]">완성된 정답 문장을 정확히 읽으면 다음 문제 버튼이 열립니다.</div>
       </div>
     </div>
 
@@ -517,6 +530,7 @@
     let stage = 1;
     let isRecording = false;
     let recognition = null;
+    let activeMicTarget = 'main'; // 'main' 또는 'shadow'
 
     const appTitle = document.getElementById('appTitle');
     const gaugeFill = document.getElementById('gaugeFill');
@@ -548,7 +562,16 @@
     const stage2Box = document.getElementById('stage2Box');
     const assembledSlots = document.getElementById('assembledSlots');
     const emptyGuideText = document.getElementById('emptyGuideText');
+    const wordPoolContainer = document.getElementById('wordPoolContainer');
     const wordPool = document.getElementById('wordPool');
+    const slotHelperText = document.getElementById('slotHelperText');
+
+    // 따라 말하기(Shadowing) 컨테이너 요소들
+    const shadowingContainer = document.getElementById('shadowingContainer');
+    const shadowMicBtn = document.getElementById('shadowMicBtn');
+    const shadowMicIcon = document.getElementById('shadowMicIcon');
+    const shadowMicLabel = document.getElementById('shadowMicLabel');
+    const shadowDebugText = document.getElementById('shadowDebugText');
 
     const mainMicBtn = document.getElementById('mainMicBtn');
     const mainMicIcon = document.getElementById('mainMicIcon');
@@ -650,6 +673,7 @@
     }
 
     function addGauge(points) {
+      if (points <= 0) return;
       cloudState.totalMatchedCount += points;
       updateGaugeUI(true);
     }
@@ -800,6 +824,10 @@
       mainMicBtn.classList.remove('mic-active');
       mainMicIcon.textContent = "🎤";
       mainMicLabel.textContent = "마이크 누르고 말하기";
+
+      shadowMicBtn.classList.remove('mic-active');
+      shadowMicIcon.textContent = "🎤";
+      shadowMicLabel.textContent = "마이크 켜고 따라 읽기";
       
       if (recognition) {
         recognition.onstart = null;
@@ -811,7 +839,8 @@
       }
     }
 
-    function startSTT() {
+    function startSTT(target = 'main') {
+      activeMicTarget = target;
       const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechClass) {
         alert("이 브라우저는 음성 인식을 지원하지 않습니다. 사파리(Safari) 앱을 사용해 주세요.");
@@ -831,11 +860,18 @@
 
         recognition.onstart = () => {
           isRecording = true;
-          sound.mic(); // 마이크 활성화 비프음
-          mainMicBtn.classList.add('mic-active');
-          mainMicIcon.textContent = "🛑";
-          mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
-          spokenDebugText.textContent = "🎤 음성 대기 중...";
+          sound.mic();
+          if (activeMicTarget === 'main') {
+            mainMicBtn.classList.add('mic-active');
+            mainMicIcon.textContent = "🛑";
+            mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
+            spokenDebugText.textContent = "🎤 음성 대기 중...";
+          } else {
+            shadowMicBtn.classList.add('mic-active');
+            shadowMicIcon.textContent = "🛑";
+            shadowMicLabel.textContent = "듣고 있어요... 읽어보세요!";
+            shadowDebugText.textContent = "🎤 따라 읽는 중...";
+          }
         };
 
         recognition.onresult = (e) => {
@@ -843,7 +879,11 @@
           for (let i = 0; i < e.results[0].length; i++) {
             spokenList.push(e.results[0][i].transcript);
           }
-          handleSpokenResults(spokenList);
+          if (activeMicTarget === 'main') {
+            handleSpokenResults(spokenList);
+          } else {
+            handleShadowSpokenResults(spokenList);
+          }
         };
 
         recognition.onerror = (e) => {
@@ -865,8 +905,7 @@
       }
     }
 
-    function toggleSTT() {
-      // 💡 애플펜슬 터치 잔여 포커스를 강제로 해제하여 시스템 텍스트/필기 모드 간섭 차단
+    function toggleSTT(target = 'main') {
       if (document.activeElement && typeof document.activeElement.blur === 'function') {
         document.activeElement.blur();
       }
@@ -875,11 +914,12 @@
       if (isRecording) {
         stopSTT();
       } else {
-        startSTT();
+        startSTT(target);
       }
     }
 
-    mainMicBtn.addEventListener('click', toggleSTT);
+    mainMicBtn.addEventListener('click', () => toggleSTT('main'));
+    shadowMicBtn.addEventListener('click', () => toggleSTT('shadow'));
 
     function handleSpokenResults(spokenList) {
       const q = questions[curIndex];
@@ -911,6 +951,33 @@
       }
     }
 
+    // 💡 정답 보고 따라읽기 음성 판정 로직 (점수 0점)
+    function handleShadowSpokenResults(spokenList) {
+      const q = questions[curIndex];
+      const targetNorm = normalizeForSpeech(q.en);
+
+      const primarySpoken = spokenList[0] || '';
+      shadowDebugText.textContent = `들린 말: "${primarySpoken}"`;
+
+      const isMatched = spokenList.some(spoken => {
+        const spokenNorm = normalizeForSpeech(spoken);
+        return spokenNorm === targetNorm;
+      });
+
+      if (isMatched) {
+        unlockAudioSystem();
+        sound.success();
+        confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+        
+        shadowDebugText.innerHTML = `👏 <span class="font-bold text-emerald-700">잘 읽었어요! 이제 다음 문제로 갈 수 있어요.</span>`;
+        shadowMicBtn.style.display = "none"; // 따라읽기 마이크 완료 숨김
+        nextBtn.style.display = "inline-flex"; // 다음 문제 버튼 개방!
+      } else {
+        sound.wrong();
+        shadowDebugText.innerHTML = `⚠️ <span class="text-rose-600 font-bold">문장과 달라요. 다시 또박또박 읽어보세요!</span>`;
+      }
+    }
+
     function displaySpeakingSuccessBlocks() {
       const q = questions[curIndex];
       speakingSuccessBlocks.innerHTML = '';
@@ -929,23 +996,37 @@
         stage1Box.style.display = "flex";
         speakingSuccessBox.style.display = "none";
         stage2Box.style.display = "none";
+        wordPoolContainer.style.display = "block";
+        shadowingContainer.style.display = "none";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
         listenAgainBtn.style.display = "none";
+        clearBtn.style.display = "inline-flex";
+        slotHelperText.textContent = "(블록을 누르면 보관함으로 돌아갑니다)";
       } else if (stage === 2) {
         stage1Box.style.display = "none";
         speakingSuccessBox.style.display = "none";
         stage2Box.style.display = "flex";
+        wordPoolContainer.style.display = "block";
+        shadowingContainer.style.display = "none";
         checkBlockBtn.style.display = "inline-flex";
         giveUpBtn.style.display = "inline-flex";
         listenAgainBtn.style.display = "none";
+        clearBtn.style.display = "inline-flex";
+        slotHelperText.textContent = "(블록을 누르면 보관함으로 돌아갑니다)";
       } else if (stage === 3) {
+        // 💡 방법 3: 정답 보기 시 따라읽기 단계
         stage1Box.style.display = "none";
         speakingSuccessBox.style.display = "none";
         stage2Box.style.display = "flex";
+        wordPoolContainer.style.display = "none"; // 보관함 숨김
+        shadowingContainer.style.display = "flex"; // 따라읽기 안내 박스 등장
+        shadowMicBtn.style.display = "inline-flex";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
         listenAgainBtn.style.display = "inline-flex";
+        clearBtn.style.display = "none"; // 비우기 버튼 숨김
+        slotHelperText.textContent = "정답 문장";
       } else if (stage === 4) {
         stage1Box.style.display = "none";
         speakingSuccessBox.style.display = "flex";
@@ -991,7 +1072,9 @@
       });
 
       speakText(q.en);
-      nextBtn.style.display = "inline-flex";
+      // 💡 바로 다음으로 넘어가지 못하게 잠그고 따라읽기 유도
+      nextBtn.style.display = "none";
+      shadowDebugText.textContent = "완성된 정답 문장을 정확히 읽으면 다음 문제 버튼이 열립니다.";
     }
 
     function tokenizeEnglish(sentence) {
@@ -1188,6 +1271,8 @@
       stage1Box.style.display = "none";
       speakingSuccessBox.style.display = "none";
       stage2Box.style.display = "flex";
+      wordPoolContainer.style.display = "none";
+      shadowingContainer.style.display = "none";
       assembledSlots.innerHTML = `
         <div class="w-full py-8 text-center">
           <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 말문 칭칭 마스터! 🏆</p>
@@ -1197,7 +1282,6 @@
           </button>
         </div>
       `;
-      wordPool.innerHTML = '';
       checkBlockBtn.style.display = "none";
       giveUpBtn.style.display = "none";
       listenAgainBtn.style.display = "none";
