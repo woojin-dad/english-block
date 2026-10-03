@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Jua&display=swap" rel="stylesheet">
   
   <style>
@@ -443,7 +443,6 @@
         playTone(783.99, 'sine', 0.12, 0.16);
         playTone(1046.50, 'triangle', 0.35, 0.24);
       },
-      // ⚡ 잭팟 전용 팡파르 (화려한 6음 아르페지오)
       jackpotFanfare() {
         [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) => playTone(f, 'triangle', 0.22, i * 0.07));
       },
@@ -1153,6 +1152,7 @@
       return Math.abs(hash);
     }
 
+    /* 💡 무한 순환 로직: 마지막 문제 도달 시 팝업 없이 콤보 유지하며 첫 문제로 매끄럽게 연결 */
     function loadQuestion(idx) {
       stopSTT();
 
@@ -1160,12 +1160,15 @@
         koreanSentence.textContent = "문장을 불러올 수 없습니다. 구글 시트를 확인해주세요.";
         return;
       }
+
+      // 한 바퀴 완주 시: 콤보를 그대로 살리고 백그라운드에서 약점 순 재정렬 후 0번 문제로 직행
       if (idx >= questions.length) {
-        finishGameCelebration();
-        return;
+        questions = sortQuestionsByAccuracy([...questions]);
+        curIndex = 0;
+      } else {
+        curIndex = idx;
       }
 
-      curIndex = idx;
       isCurrentTrialRecorded = false;
       nextBtn.style.display = "none";
       listenAgainBtn.style.display = "none";
@@ -1321,37 +1324,6 @@
       sound.pop();
       loadQuestion(curIndex + 1);
     });
-
-    function finishGameCelebration() {
-      sound.gift();
-      confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
-
-      koreanSentence.textContent = "🎉 모든 미션을 완료했어요!";
-      stage1Box.style.display = "none";
-      speakingSuccessBox.style.display = "none";
-      stage2Box.style.display = "flex";
-      wordPoolContainer.style.display = "none";
-      shadowingContainer.style.display = "none";
-      assembledSlots.innerHTML = `
-        <div class="w-full py-8 text-center">
-          <p class="text-2xl font-black text-slate-800 mb-2">당신은 최고의 말문 칭칭 마스터! 🏆</p>
-          <p class="text-slate-500 mb-4 font-sans">누적 선물: ${cloudState.giftCount}개 🎁</p>
-          <button onclick="restartGameWithResort()" class="toy-btn bg-[#03c75a] text-white font-bold text-lg px-8 py-3 rounded-2xl">
-            약점 문장부터 다시 도전하기 🚀
-          </button>
-        </div>
-      `;
-      checkBlockBtn.style.display = "none";
-      giveUpBtn.style.display = "none";
-      listenAgainBtn.style.display = "none";
-      nextBtn.style.display = "none";
-    }
-
-    function restartGameWithResort() {
-      resetCombo();
-      questions = sortQuestionsByAccuracy([...questions]);
-      loadQuestion(0);
-    }
 
     function parseCSV(text) {
       const rows = [];
