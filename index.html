@@ -100,7 +100,7 @@
       border-color: #b91c1c !important;
     }
 
-    /* 콤보 팝업 애니메이션 */
+    /* 콤보 및 팝업 애니메이션 */
     @keyframes comboPopIn {
       0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
       60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
@@ -108,6 +108,17 @@
     }
     .animate-combo-pop {
       animation: comboPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* 잭팟 플로팅 애니메이션 */
+    @keyframes jackpotFloat {
+      0% { transform: translate(-50%, 20px) scale(0.6); opacity: 0; }
+      20% { transform: translate(-50%, 0) scale(1.1); opacity: 1; }
+      80% { transform: translate(-50%, -10px) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -30px) scale(0.9); opacity: 0; }
+    }
+    .animate-jackpot {
+      animation: jackpotFloat 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     }
 
     /* 마이크 카운트 숫자 증가 팝 애니메이션 */
@@ -132,6 +143,13 @@
   </style>
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 relative">
+
+  <!-- ⚡ 잭팟 토스트 알림 (NEW / 50% 미만 성공 시 플로팅) -->
+  <div id="jackpotToast" style="display: none;" class="fixed top-24 left-1/2 z-50 pointer-events-none px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 text-white font-black text-xl sm:text-2xl shadow-2xl border-2 border-amber-300 flex items-center gap-2">
+    <span>⚡</span>
+    <span>JACKPOT! +5점 획득!</span>
+    <span>🎉</span>
+  </div>
 
   <!-- 📊 부모님 전용 시크릿 학습 진단 대시보드 모달 (제목 5회 터치 시 등장) -->
   <div id="dashboardModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
@@ -268,8 +286,9 @@
         🔥 1 COMBO
       </div>
 
+      <!-- 💡 정답률 및 획득 가능 게이지 표시 배지 -->
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
-        🎯 --%
+        🎯 NEW (⚡+5)
       </div>
 
       <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug px-4">
@@ -341,7 +360,7 @@
         </div>
       </div>
 
-      <!-- 💡 정답 보고 따라읽기 전용 안내 및 마이크 영역 -->
+      <!-- 정답 보고 따라읽기 전용 안내 및 마이크 영역 -->
       <div id="shadowingContainer" style="display: none;" class="bg-amber-50 rounded-3xl p-5 shadow-lg border-2 border-amber-300 flex flex-col items-center justify-center text-center gap-3">
         <p class="text-base sm:text-lg font-black text-amber-950">
           정답 문장을 보고 큰 소리로 따라 말해보세요! 📢
@@ -423,6 +442,10 @@
         playTone(659.25, 'sine', 0.12, 0.08);
         playTone(783.99, 'sine', 0.12, 0.16);
         playTone(1046.50, 'triangle', 0.35, 0.24);
+      },
+      // ⚡ 잭팟 전용 팡파르 (화려한 6음 아르페지오)
+      jackpotFanfare() {
+        [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) => playTone(f, 'triangle', 0.22, i * 0.07));
       },
       comboFanfare() {
         [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f, i) => playTone(f, 'triangle', 0.25, i * 0.09));
@@ -526,11 +549,12 @@
     // 🔥 콤보 상태 및 타이머 변수
     let micComboCount = 0;
     let comboModalTimer = null;
+    let jackpotToastTimer = null;
 
     let stage = 1;
     let isRecording = false;
     let recognition = null;
-    let activeMicTarget = 'main'; // 'main' 또는 'shadow'
+    let activeMicTarget = 'main';
 
     const appTitle = document.getElementById('appTitle');
     const gaugeFill = document.getElementById('gaugeFill');
@@ -539,6 +563,7 @@
     const koreanSentence = document.getElementById('koreanSentence');
     const accuracyBadge = document.getElementById('accuracyBadge');
     const comboBadge = document.getElementById('comboBadge');
+    const jackpotToast = document.getElementById('jackpotToast');
 
     const comboModal = document.getElementById('comboModal');
     const closeComboModalBtn = document.getElementById('closeComboModalBtn');
@@ -566,7 +591,7 @@
     const wordPool = document.getElementById('wordPool');
     const slotHelperText = document.getElementById('slotHelperText');
 
-    // 따라 말하기(Shadowing) 컨테이너 요소들
+    // 따라 말하기 컨테이너 요소들
     const shadowingContainer = document.getElementById('shadowingContainer');
     const shadowMicBtn = document.getElementById('shadowMicBtn');
     const shadowMicIcon = document.getElementById('shadowMicIcon');
@@ -724,24 +749,53 @@
       hideComboModal();
     });
 
-    function updateAccuracyBadgeUI(enSentence) {
+    /* ==========================================================================
+       🎯 4. 문장별 정답률 & 획득 가능 게이지 점수 계산기
+       ========================================================================== */
+    function getSentenceGaugePotential(enSentence) {
       const stat = sentenceStatsDB[enSentence];
       if (!stat || stat.trials === 0) {
-        accuracyBadge.textContent = "🎯 NEW";
-        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-600 border-slate-300";
-        return;
+        return { rate: -1, points: 5, label: "NEW" };
       }
-
       const rate = Math.round((stat.hits / stat.trials) * 100);
-      accuracyBadge.textContent = `🎯 ${rate}%`;
-
-      if (rate >= 80) {
-        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-emerald-100 text-[#02833b] border-[#a7f3d0]";
-      } else if (rate >= 50) {
-        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-amber-100 text-amber-800 border-amber-300";
+      if (rate < 50) {
+        return { rate, points: 5, label: `${rate}%` };
+      } else if (rate < 80) {
+        return { rate, points: 3, label: `${rate}%` };
       } else {
-        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm bg-rose-100 text-rose-700 border-rose-300";
+        return { rate, points: 2, label: `${rate}%` };
       }
+    }
+
+    function updateAccuracyBadgeUI(enSentence) {
+      const info = getSentenceGaugePotential(enSentence);
+
+      accuracyBadge.textContent = `🎯 ${info.label} (⚡+${info.points})`;
+
+      if (info.label === "NEW") {
+        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-purple-100 text-purple-700 border-purple-300";
+      } else if (info.points === 5) {
+        // 50% 미만 약점 문장 (강렬한 5점 찬스)
+        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-rose-100 text-rose-700 border-rose-300 animate-pulse";
+      } else if (info.points === 3) {
+        // 50% ~ 80% 미만 표준 문장
+        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-amber-100 text-amber-800 border-amber-300";
+      } else {
+        // 80% 이상 숙련 문장
+        accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-emerald-100 text-[#02833b] border-[#a7f3d0]";
+      }
+    }
+
+    function showJackpotToast() {
+      if (jackpotToastTimer) clearTimeout(jackpotToastTimer);
+      jackpotToast.style.display = 'flex';
+      jackpotToast.classList.remove('animate-jackpot');
+      void jackpotToast.offsetWidth;
+      jackpotToast.classList.add('animate-jackpot');
+
+      jackpotToastTimer = setTimeout(() => {
+        jackpotToast.style.display = 'none';
+      }, 1400);
     }
 
     function recordSentenceResult(isSuccess) {
@@ -817,7 +871,7 @@
     }
 
     /* ==========================================================================
-       4. Web Speech STT (애플펜슬 포커스 해제 및 사파리 안정화 버전)
+       5. Web Speech STT (애플펜슬 포커스 해제 및 사파리 안정화 버전)
        ========================================================================== */
     function stopSTT() {
       isRecording = false;
@@ -935,13 +989,18 @@
 
       if (isMatched) {
         spokenDebugText.textContent = `🎯 완벽해요: "${primarySpoken}"`;
+
+        // 💡 문제 풀기 직전의 난이도에 맞춘 게이지 점수 계산 (+5점 / +3점 / +2점)
+        const potential = getSentenceGaugePotential(q.en);
+        const earnedPoints = potential.points;
+
         recordSentenceResult(true);
 
         micComboCount += 1;
         updateComboUI();
 
         displaySpeakingSuccessBlocks();
-        onAnswerCorrect(3, true);
+        onAnswerCorrect(earnedPoints, true);
 
         if (micComboCount >= 10) {
           trigger10ComboBonus();
@@ -951,7 +1010,7 @@
       }
     }
 
-    // 💡 정답 보고 따라읽기 음성 판정 로직 (점수 0점)
+    // 정답 보고 따라읽기 음성 판정 로직 (게이지 0점)
     function handleShadowSpokenResults(spokenList) {
       const q = questions[curIndex];
       const targetNorm = normalizeForSpeech(q.en);
@@ -970,8 +1029,8 @@
         confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
         
         shadowDebugText.innerHTML = `👏 <span class="font-bold text-emerald-700">잘 읽었어요! 이제 다음 문제로 갈 수 있어요.</span>`;
-        shadowMicBtn.style.display = "none"; // 따라읽기 마이크 완료 숨김
-        nextBtn.style.display = "inline-flex"; // 다음 문제 버튼 개방!
+        shadowMicBtn.style.display = "none";
+        nextBtn.style.display = "inline-flex";
       } else {
         sound.wrong();
         shadowDebugText.innerHTML = `⚠️ <span class="text-rose-600 font-bold">문장과 달라요. 다시 또박또박 읽어보세요!</span>`;
@@ -988,7 +1047,7 @@
     }
 
     /* ==========================================================================
-       5. 단계 컨트롤
+       6. 단계 컨트롤
        ========================================================================== */
     function setGameStage(newStage) {
       stage = newStage;
@@ -1015,17 +1074,16 @@
         clearBtn.style.display = "inline-flex";
         slotHelperText.textContent = "(블록을 누르면 보관함으로 돌아갑니다)";
       } else if (stage === 3) {
-        // 💡 방법 3: 정답 보기 시 따라읽기 단계
         stage1Box.style.display = "none";
         speakingSuccessBox.style.display = "none";
         stage2Box.style.display = "flex";
-        wordPoolContainer.style.display = "none"; // 보관함 숨김
-        shadowingContainer.style.display = "flex"; // 따라읽기 안내 박스 등장
+        wordPoolContainer.style.display = "none";
+        shadowingContainer.style.display = "flex";
         shadowMicBtn.style.display = "inline-flex";
         checkBlockBtn.style.display = "none";
         giveUpBtn.style.display = "none";
         listenAgainBtn.style.display = "inline-flex";
-        clearBtn.style.display = "none"; // 비우기 버튼 숨김
+        clearBtn.style.display = "none";
         slotHelperText.textContent = "정답 문장";
       } else if (stage === 4) {
         stage1Box.style.display = "none";
@@ -1072,7 +1130,6 @@
       });
 
       speakText(q.en);
-      // 💡 바로 다음으로 넘어가지 못하게 잠그고 따라읽기 유도
       nextBtn.style.display = "none";
       shadowDebugText.textContent = "완성된 정답 문장을 정확히 읽으면 다음 문제 버튼이 열립니다.";
     }
@@ -1217,8 +1274,16 @@
 
     function onAnswerCorrect(gaugePoints, isSpeakingSuccess = false) {
       unlockAudioSystem();
-      sound.success();
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
+
+      // 💡 5점 잭팟 달성 시 화려한 팡파르와 대형 폭죽 연출
+      if (gaugePoints >= 5) {
+        sound.jackpotFanfare();
+        confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 }, colors: ['#f59e0b', '#ec4899', '#8b5cf6', '#10b981'] });
+        showJackpotToast();
+      } else {
+        sound.success();
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
+      }
 
       addGauge(gaugePoints);
       speakText(questions[curIndex].en);
@@ -1249,6 +1314,7 @@
 
       if (isSame) {
         resetCombo();
+        // 블록 조립 성공은 항상 +1점
         onAnswerCorrect(1, false);
       } else {
         sound.wrong();
@@ -1369,7 +1435,7 @@
     }
 
     /* ==========================================================================
-       📊 6. 시크릿 학습 진단 대시보드 로직
+       📊 7. 시크릿 학습 진단 대시보드 로직
        ========================================================================== */
     function openDashboard() {
       unlockAudioSystem();
