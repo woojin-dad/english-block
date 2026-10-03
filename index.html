@@ -218,7 +218,7 @@
       <!-- 모달 푸터 (초기화 및 닫기) -->
       <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
         <button id="resetAllStatsBtn" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition">
-          🗑️️ 전체 기록 초기화
+          🗑️ 전체 기록 초기화
         </button>
         <button id="closeDashboardFooterBtn" class="toy-btn px-6 py-2 rounded-xl text-sm font-bold bg-slate-800 text-white hover:bg-slate-900 transition">
           닫기
@@ -291,7 +291,7 @@
         🔥 1 COMBO
       </div>
 
-      <!-- 💡 [중앙 상단] 회차 및 실제 출제 문장 진행도 배지 (예: 🏃 1회차 · 4/15) -->
+      <!-- [중앙 상단] 회차 및 실제 출제 문장 진행도 배지 (예: 🏃 1회차 · 4/15) -->
       <div id="roundProgressBadge" class="absolute top-3.5 left-1/2 -translate-x-1/2 sm:top-4 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-700 border-slate-300 font-sans">
         🏃 1회차 · 1/1
       </div>
@@ -301,7 +301,8 @@
         🎯 NEW (⚡+5)
       </div>
 
-      <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug px-4 mt-4 sm:mt-2">
+      <!-- 💡 상단 뱃지들과 겹치지 않고 시원하게 떨어지도록 mt-8 sm:mt-9 적용 -->
+      <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug px-4 mt-8 sm:mt-9">
         문장을 불러오는 중입니다... 🧩
       </div>
     </div>
@@ -548,7 +549,7 @@
     let allQuestionsList = [];
     let questions = [];
     let curIndex = 0;
-    let currentLoopCount = 1; // 💡 현재 몇 바퀴(회차) 돌고 있는지 카운트
+    let currentLoopCount = 1;
     
     let cloudState = {
       coins: 0,
@@ -1122,7 +1123,7 @@
         nextBtn.style.display = "inline-flex";
       } else {
         sound.wrong();
-        shadowDebugText.innerHTML = `⚠️️ <span class="text-rose-600 font-bold">문장과 달라요. 다시 또박또박 읽어보세요!</span>`;
+        shadowDebugText.innerHTML = `⚠️ <span class="text-rose-600 font-bold">문장과 달라요. 다시 또박또박 읽어보세요!</span>`;
       }
     }
 
@@ -1247,7 +1248,6 @@
       return Math.abs(hash);
     }
 
-    /* 💡 로딩 및 회차 순환 로직 */
     function loadQuestion(idx) {
       stopSTT();
 
@@ -1256,7 +1256,6 @@
         return;
       }
 
-      // 한 바퀴를 완주한 경우: 회차 카운트 +1 및 재배치
       if (idx >= questions.length) {
         currentLoopCount += 1;
         questions = prepareActiveQuestions(allQuestionsList);
@@ -1275,7 +1274,7 @@
       koreanSentence.textContent = q.kr;
 
       updateAccuracyBadgeUI(q.en);
-      updateRoundProgressBadgeUI(); // 💡 중앙 상단 진행도 갱신
+      updateRoundProgressBadgeUI();
       updateComboUI();
 
       assembledSlots.innerHTML = '';
