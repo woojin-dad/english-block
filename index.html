@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Jua&display=swap" rel="stylesheet">
   
   <style>
@@ -144,10 +144,10 @@
 </head>
 <body class="flex flex-col text-slate-800 p-2 sm:p-4 md:p-6 relative">
 
-  <!-- ⚡ 잭팟 토스트 알림 (NEW / 50% 미만 성공 시 플로팅) -->
+  <!-- ⚡ 잭팟 / 졸업 토스트 알림 -->
   <div id="jackpotToast" style="display: none;" class="fixed top-24 left-1/2 z-50 pointer-events-none px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 text-white font-black text-xl sm:text-2xl shadow-2xl border-2 border-amber-300 flex items-center gap-2">
     <span>⚡</span>
-    <span>JACKPOT! +5점 획득!</span>
+    <span id="jackpotToastText">JACKPOT! +5점 획득!</span>
     <span>🎉</span>
   </div>
 
@@ -160,7 +160,7 @@
           <span class="text-2xl">📊</span>
           <div>
             <h2 class="text-lg sm:text-xl font-black text-slate-900 leading-tight">말문 칭칭 학습 진단 대시보드</h2>
-            <p class="text-xs text-slate-500 font-sans">문장별 정답률 및 방치된 문장 모니터링</p>
+            <p class="text-xs text-slate-500 font-sans">문장별 정답률, 연속 스트릭 및 간격 복습 모니터링</p>
           </div>
         </div>
         <button id="closeDashboardBtn" class="text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 rounded-xl transition">
@@ -174,9 +174,9 @@
           <p class="text-[11px] text-slate-500 font-sans">전체 문장</p>
           <p id="dashTotalCount" class="text-lg font-black text-slate-800">0</p>
         </div>
-        <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200">
-          <p class="text-[11px] text-slate-500 font-sans">도전한 문장</p>
-          <p id="dashLearnedCount" class="text-lg font-black text-emerald-600">0</p>
+        <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-purple-200 bg-purple-50/50">
+          <p class="text-[11px] text-purple-600 font-sans font-bold">🎓 졸업 (휴식 중)</p>
+          <p id="dashMasteredCount" class="text-lg font-black text-purple-700">0</p>
         </div>
         <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200">
           <p class="text-[11px] text-slate-500 font-sans">평균 정답률</p>
@@ -191,8 +191,9 @@
       <!-- 탭 필터 버튼 -->
       <div class="px-4 py-2 bg-white flex items-center gap-1.5 border-b border-slate-100 text-xs overflow-x-auto">
         <button data-filter="all" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-[#03c75a] text-white">전체</button>
-        <button data-filter="stale" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🚨 방치 (7일+)</button>
+        <button data-filter="mastered" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🎓 졸업(휴식)</button>
         <button data-filter="weak" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">⚠️ 약점 (&lt;60%)</button>
+        <button data-filter="stale" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🚨 방치 (7일+)</button>
         <button data-filter="new" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🆕 신규</button>
       </div>
 
@@ -203,8 +204,9 @@
             <tr class="text-slate-400 font-sans border-b border-slate-200">
               <th class="pb-2 pl-2">상태</th>
               <th class="pb-2">문장 (영어 / 한글)</th>
+              <th class="pb-2 text-center">원샷 스트릭</th>
               <th class="pb-2 text-center">정답률</th>
-              <th class="pb-2 text-right pr-2">마지막 학습</th>
+              <th class="pb-2 text-right pr-2">마지막 학습 / 복습</th>
             </tr>
           </thead>
           <tbody id="dashTableBody" class="divide-y divide-slate-100">
@@ -286,7 +288,7 @@
         🔥 1 COMBO
       </div>
 
-      <!-- 💡 정답률 및 획득 가능 게이지 표시 배지 -->
+      <!-- 정답률 및 획득 가능 게이지 표시 배지 -->
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 NEW (⚡+5)
       </div>
@@ -314,7 +316,7 @@
       </button>
     </div>
 
-    <!-- 💡 2번 UI 전용 박스: 마이크 성공 시 정답 블록 쇼케이스 영역 -->
+    <!-- 2번 UI 전용 박스: 마이크 성공 시 정답 블록 쇼케이스 영역 -->
     <div id="speakingSuccessBox" style="display: none;" class="bg-white rounded-3xl p-5 sm:p-8 shadow-lg border-2 border-emerald-300 flex flex-col items-center justify-center text-center gap-3 animate-combo-pop">
       <div class="flex items-center gap-2">
         <span class="text-xl">🎉</span>
@@ -446,6 +448,9 @@
       jackpotFanfare() {
         [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) => playTone(f, 'triangle', 0.22, i * 0.07));
       },
+      masterFanfare() {
+        [440, 554.37, 659.25, 880, 1108.73, 1318.51].forEach((f, i) => playTone(f, 'triangle', 0.25, i * 0.08));
+      },
       comboFanfare() {
         [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f, i) => playTone(f, 'triangle', 0.25, i * 0.09));
       },
@@ -532,7 +537,8 @@
       { bg: "bg-orange-100", text: "text-orange-950", border: "border-orange-300" }
     ];
 
-    let questions = [];
+    let allQuestionsList = []; // 전체 시트 문장 원본
+    let questions = [];        // 현재 출제 대상 (쿨다운 제외 및 약점순 정렬)
     let curIndex = 0;
     
     let cloudState = {
@@ -544,6 +550,7 @@
 
     let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
     let isCurrentTrialRecorded = false;
+    let currentSentenceMicAttempts = 0; // 현재 문장에서 마이크 시도 횟수
 
     // 🔥 콤보 상태 및 타이머 변수
     let micComboCount = 0;
@@ -563,6 +570,7 @@
     const accuracyBadge = document.getElementById('accuracyBadge');
     const comboBadge = document.getElementById('comboBadge');
     const jackpotToast = document.getElementById('jackpotToast');
+    const jackpotToastText = document.getElementById('jackpotToastText');
 
     const comboModal = document.getElementById('comboModal');
     const closeComboModalBtn = document.getElementById('closeComboModalBtn');
@@ -573,7 +581,7 @@
     const closeDashboardFooterBtn = document.getElementById('closeDashboardFooterBtn');
     const resetAllStatsBtn = document.getElementById('resetAllStatsBtn');
     const dashTotalCount = document.getElementById('dashTotalCount');
-    const dashLearnedCount = document.getElementById('dashLearnedCount');
+    const dashMasteredCount = document.getElementById('dashMasteredCount');
     const dashAvgAccuracy = document.getElementById('dashAvgAccuracy');
     const dashStaleCount = document.getElementById('dashStaleCount');
     const dashTableBody = document.getElementById('dashTableBody');
@@ -767,9 +775,12 @@
     }
 
     function updateAccuracyBadgeUI(enSentence) {
+      const stat = sentenceStatsDB[enSentence];
       const info = getSentenceGaugePotential(enSentence);
 
-      accuracyBadge.textContent = `🎯 ${info.label} (⚡+${info.points})`;
+      const streakText = (stat && stat.dailyStreak > 0) ? ` · ⭐${stat.dailyStreak}/3` : '';
+
+      accuracyBadge.textContent = `🎯 ${info.label}${streakText} (⚡+${info.points})`;
 
       if (info.label === "NEW") {
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-purple-100 text-purple-700 border-purple-300";
@@ -782,8 +793,9 @@
       }
     }
 
-    function showJackpotToast() {
+    function showJackpotToast(msg = "JACKPOT! +5점 획득!") {
       if (jackpotToastTimer) clearTimeout(jackpotToastTimer);
+      jackpotToastText.textContent = msg;
       jackpotToast.style.display = 'flex';
       jackpotToast.classList.remove('animate-jackpot');
       void jackpotToast.offsetWidth;
@@ -791,10 +803,13 @@
 
       jackpotToastTimer = setTimeout(() => {
         jackpotToast.style.display = 'none';
-      }, 1400);
+      }, 1600);
     }
 
-    function recordSentenceResult(isSuccess) {
+    /* ==========================================================================
+       🎓 5. 간격 반복 & 당일 스택 보호(Safe-Lock) 판정 시스템
+       ========================================================================== */
+    function recordSentenceResult(isSuccess, isFirstAttemptSuccess = false) {
       if (isCurrentTrialRecorded) return;
       isCurrentTrialRecorded = true;
 
@@ -804,19 +819,85 @@
       recordTodaySentenceOutcome(isSuccess);
 
       if (!sentenceStatsDB[q.en]) {
-        sentenceStatsDB[q.en] = { trials: 0, hits: 0, lastSeen: 0 };
+        sentenceStatsDB[q.en] = {
+          trials: 0,
+          hits: 0,
+          lastSeen: 0,
+          dailyStreak: 0,
+          lastStreakDate: null,
+          cooldownUntil: 0,
+          masteryStage: 0
+        };
       }
 
-      sentenceStatsDB[q.en].trials += 1;
-      if (isSuccess) sentenceStatsDB[q.en].hits += 1;
-      sentenceStatsDB[q.en].lastSeen = Date.now();
+      const entry = sentenceStatsDB[q.en];
+      const today = getTodayKey();
+      const isComeback = (entry.cooldownUntil && entry.cooldownUntil > 0 && Date.now() >= entry.cooldownUntil);
+
+      entry.trials += 1;
+      if (isSuccess) entry.hits += 1;
+      entry.lastSeen = Date.now();
+
+      // 💡 [스트릭 & 간격 반복 판정]
+      if (isFirstAttemptSuccess) {
+        // 컴백 문장인데 또 첫 시도에 완벽하게 맞힌 경우 (2차 졸업: 14일 연장)
+        if (isComeback || entry.masteryStage >= 1) {
+          entry.dailyStreak = 0;
+          entry.masteryStage = 2;
+          entry.cooldownUntil = Date.now() + (14 * 24 * 60 * 60 * 1000); // 14일 잠복
+          sound.masterFanfare();
+          showJackpotToast("🎓 완벽 마스터! 14일간 졸업!");
+        } else {
+          // 오늘 첫 시도 스트릭을 아직 안 쌓았다면 +1
+          if (entry.lastStreakDate !== today) {
+            entry.dailyStreak = (entry.dailyStreak || 0) + 1;
+            entry.lastStreakDate = today;
+
+            // 서로 다른 3일 연속 첫 시도 달성! (1차 졸업: 7일 잠복)
+            if (entry.dailyStreak >= 3) {
+              entry.dailyStreak = 0;
+              entry.masteryStage = 1;
+              entry.trials = 3; // 기본 베이스 3/3 보장
+              entry.hits = 3;
+              entry.cooldownUntil = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7일 잠복
+              sound.masterFanfare();
+              showJackpotToast("🎓 3일 연속 원샷 달성! 7일간 졸업!");
+            }
+          }
+        }
+      } else {
+        // 💡 [당일 스택 보호 (Safe-Lock)]: 
+        // 오늘 이미 원샷 성공을 따낸 문장은 같은 날 2~3회독 중 틀려도 스택이 깎이지 않고 보호됩니다.
+        if (entry.lastStreakDate !== today) {
+          entry.dailyStreak = 0;
+        }
+
+        // 7일 만에 돌아온 문장이었는데 틀린 경우 (방식 B 안전망: 75%로 하향 후 루프 복귀)
+        if (isComeback) {
+          entry.cooldownUntil = 0;
+          entry.masteryStage = 0;
+        }
+      }
 
       localStorage.setItem('block_sentence_stats', JSON.stringify(sentenceStatsDB));
       updateAccuracyBadgeUI(q.en);
     }
 
-    function sortQuestionsByAccuracy(list) {
-      return list.sort((a, b) => {
+    // 💡 출제 필터: 쿨다운(졸업 잠복기) 중인 문장은 제외하고, 약점 우선 정렬
+    function prepareActiveQuestions(list) {
+      const now = Date.now();
+      
+      let active = list.filter(item => {
+        const stat = sentenceStatsDB[item.en];
+        if (stat && stat.cooldownUntil && stat.cooldownUntil > now) {
+          return false; // 졸업 휴식 중이므로 출제 제외
+        }
+        return true;
+      });
+
+      if (active.length === 0) active = [...list];
+
+      return active.sort((a, b) => {
         const statA = sentenceStatsDB[a.en];
         const statB = sentenceStatsDB[b.en];
 
@@ -824,9 +905,9 @@
         const rateB = statB && statB.trials > 0 ? (statB.hits / statB.trials) * 100 : -1;
 
         const getPriorityTier = (rate) => {
-          if (rate === -1) return 1;
-          if (rate >= 0 && rate < 100) return 2;
-          return 3;
+          if (rate === -1) return 1; // NEW
+          if (rate >= 0 && rate < 100) return 2; // 약점
+          return 3; // 100%
         };
 
         const tierA = getPriorityTier(rateA);
@@ -867,7 +948,7 @@
     }
 
     /* ==========================================================================
-       5. Web Speech STT (애플펜슬 포커스 해제 및 사파리 안정화 버전)
+       6. Web Speech STT
        ========================================================================== */
     function stopSTT() {
       isRecording = false;
@@ -912,10 +993,11 @@
           isRecording = true;
           sound.mic();
           if (activeMicTarget === 'main') {
+            currentSentenceMicAttempts += 1;
             mainMicBtn.classList.add('mic-active');
             mainMicIcon.textContent = "🛑";
             mainMicLabel.textContent = "듣고 있어요... 말씀하세요!";
-            spokenDebugText.textContent = "🎤 음성 대기 중...";
+            spokenDebugText.textContent = `🎤 음성 대기 중... (${currentSentenceMicAttempts}번째 시도)`;
           } else {
             shadowMicBtn.classList.add('mic-active');
             shadowMicIcon.textContent = "🛑";
@@ -989,7 +1071,8 @@
         const potential = getSentenceGaugePotential(q.en);
         const earnedPoints = potential.points;
 
-        recordSentenceResult(true);
+        const isOneShot = (currentSentenceMicAttempts === 1);
+        recordSentenceResult(true, isOneShot);
 
         micComboCount += 1;
         updateComboUI();
@@ -1041,7 +1124,7 @@
     }
 
     /* ==========================================================================
-       6. 단계 컨트롤
+       7. 단계 컨트롤
        ========================================================================== */
     function setGameStage(newStage) {
       stage = newStage;
@@ -1093,7 +1176,7 @@
       unlockAudioSystem();
       stopSTT();
       sound.hint();
-      recordSentenceResult(false);
+      recordSentenceResult(false, false);
       resetCombo();
       setGameStage(2);
     });
@@ -1101,7 +1184,7 @@
     giveUpBtn.addEventListener('click', () => {
       unlockAudioSystem();
       stopSTT();
-      recordSentenceResult(false);
+      recordSentenceResult(false, false);
       resetCombo();
       setGameStage(3);
       revealAnswerDirectly();
@@ -1152,7 +1235,7 @@
       return Math.abs(hash);
     }
 
-    /* 💡 무한 순환 로직: 마지막 문제 도달 시 팝업 없이 콤보 유지하며 첫 문제로 매끄럽게 연결 */
+    /* 💡 무한 순환 로직: 한 바퀴 끝날 때 잠복기 체크 후 자동 재소환 & 약점순 재배치 */
     function loadQuestion(idx) {
       stopSTT();
 
@@ -1161,15 +1244,15 @@
         return;
       }
 
-      // 한 바퀴 완주 시: 콤보를 그대로 살리고 백그라운드에서 약점 순 재정렬 후 0번 문제로 직행
       if (idx >= questions.length) {
-        questions = sortQuestionsByAccuracy([...questions]);
+        questions = prepareActiveQuestions(allQuestionsList);
         curIndex = 0;
       } else {
         curIndex = idx;
       }
 
       isCurrentTrialRecorded = false;
+      currentSentenceMicAttempts = 0;
       nextBtn.style.display = "none";
       listenAgainBtn.style.display = "none";
       spokenDebugText.textContent = "";
@@ -1276,7 +1359,7 @@
       if (gaugePoints >= 5) {
         sound.jackpotFanfare();
         confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 }, colors: ['#f59e0b', '#ec4899', '#8b5cf6', '#10b981'] });
-        showJackpotToast();
+        showJackpotToast("JACKPOT! +5점 획득!");
       } else {
         sound.success();
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#03c75a', '#facc15', '#38bdf8', '#f43f5e'] });
@@ -1311,6 +1394,7 @@
 
       if (isSame) {
         resetCombo();
+        recordSentenceResult(true, false);
         onAnswerCorrect(1, false);
       } else {
         sound.wrong();
@@ -1383,7 +1467,8 @@
         });
 
         if (list.length > 0) {
-          questions = sortQuestionsByAccuracy(list);
+          allQuestionsList = list;
+          questions = prepareActiveQuestions(allQuestionsList);
           loadQuestion(0);
           return;
         }
@@ -1391,16 +1476,17 @@
         console.warn("시트 가져오기 실패, 기본 문장 사용:", e);
       }
 
-      questions = sortQuestionsByAccuracy(BACKUP_QUESTIONS.map(q => ({
+      allQuestionsList = BACKUP_QUESTIONS.map(q => ({
         kr: q.kr,
         en: q.en,
         tokens: tokenizeEnglish(q.en)
-      })));
+      }));
+      questions = prepareActiveQuestions(allQuestionsList);
       loadQuestion(0);
     }
 
     /* ==========================================================================
-       📊 7. 시크릿 학습 진단 대시보드 로직
+       📊 8. 시크릿 학습 진단 대시보드 로직
        ========================================================================== */
     function openDashboard() {
       unlockAudioSystem();
@@ -1431,25 +1517,31 @@
     function renderDashboard() {
       const now = Date.now();
       const oneDayMs = 24 * 60 * 60 * 1000;
-      let learnedCount = 0;
+      let masteredCount = 0;
       let totalHitSum = 0;
       let totalTrialSum = 0;
       let staleCount = 0;
 
-      questions.forEach(q => {
+      allQuestionsList.forEach(q => {
         const stat = sentenceStatsDB[q.en];
-        if (stat && stat.trials > 0) {
-          learnedCount++;
-          totalHitSum += stat.hits;
-          totalTrialSum += stat.trials;
+        if (stat) {
+          if (stat.cooldownUntil && stat.cooldownUntil > now) {
+            masteredCount++;
+          }
+          if (stat.trials > 0) {
+            totalHitSum += stat.hits;
+            totalTrialSum += stat.trials;
 
-          const daysPassed = stat.lastSeen ? Math.floor((now - stat.lastSeen) / oneDayMs) : 999;
-          if (daysPassed >= 7) staleCount++;
+            const daysPassed = stat.lastSeen ? Math.floor((now - stat.lastSeen) / oneDayMs) : 999;
+            if (daysPassed >= 7 && (!stat.cooldownUntil || stat.cooldownUntil <= now)) {
+              staleCount++;
+            }
+          }
         }
       });
 
-      dashTotalCount.textContent = questions.length;
-      dashLearnedCount.textContent = learnedCount;
+      dashTotalCount.textContent = allQuestionsList.length;
+      dashMasteredCount.textContent = masteredCount;
       dashAvgAccuracy.textContent = totalTrialSum > 0 ? `${Math.round((totalHitSum / totalTrialSum) * 100)}%` : '0%';
       dashStaleCount.textContent = staleCount;
 
@@ -1461,15 +1553,20 @@
       const oneDayMs = 24 * 60 * 60 * 1000;
       dashTableBody.innerHTML = '';
 
-      const rowsData = questions.map(q => {
+      const rowsData = allQuestionsList.map(q => {
         const stat = sentenceStatsDB[q.en];
         const trials = stat ? stat.trials : 0;
         const hits = stat ? stat.hits : 0;
+        const streak = stat ? (stat.dailyStreak || 0) : 0;
         const rate = trials > 0 ? Math.round((hits / trials) * 100) : -1;
         const daysPassed = stat && stat.lastSeen ? Math.floor((now - stat.lastSeen) / oneDayMs) : (trials > 0 ? 999 : null);
+        const isResting = stat && stat.cooldownUntil && stat.cooldownUntil > now;
+        const daysRemaining = isResting ? Math.ceil((stat.cooldownUntil - now) / oneDayMs) : 0;
 
         let status = 'NEW';
-        if (trials > 0) {
+        if (isResting) {
+          status = 'MASTERED';
+        } else if (trials > 0) {
           if (daysPassed !== null && daysPassed >= 7) {
             status = 'STALE';
           } else if (rate < 60) {
@@ -1479,10 +1576,11 @@
           }
         }
 
-        return { q, trials, hits, rate, daysPassed, status };
+        return { q, trials, hits, streak, rate, daysPassed, isResting, daysRemaining, status };
       });
 
       const filtered = rowsData.filter(item => {
+        if (currentDashFilter === 'mastered') return item.status === 'MASTERED';
         if (currentDashFilter === 'stale') return item.status === 'STALE';
         if (currentDashFilter === 'weak') return item.status === 'WEAK';
         if (currentDashFilter === 'new') return item.status === 'NEW';
@@ -1490,7 +1588,7 @@
       });
 
       if (filtered.length === 0) {
-        dashTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-400 font-sans">해당하는 문장이 없습니다. ✨</td></tr>`;
+        dashTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400 font-sans">해당하는 문장이 없습니다. ✨</td></tr>`;
         return;
       }
 
@@ -1499,7 +1597,9 @@
         tr.className = "hover:bg-slate-50 transition";
 
         let badgeHtml = '';
-        if (item.status === 'NEW') {
+        if (item.status === 'MASTERED') {
+          badgeHtml = '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-100 text-purple-700">🎓 졸업</span>';
+        } else if (item.status === 'NEW') {
           badgeHtml = '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600">NEW</span>';
         } else if (item.status === 'STALE') {
           badgeHtml = '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-100 text-rose-700">🚨 방치</span>';
@@ -1517,8 +1617,12 @@
           rateHtml = `<span class="font-black ${colorClass}">${item.rate}%</span> <span class="text-[10px] text-slate-400 font-sans">(${item.hits}/${item.trials})</span>`;
         }
 
+        let streakHtml = `<span class="font-bold ${item.streak >= 2 ? 'text-amber-600 font-black' : 'text-slate-500'}">⭐ ${item.streak}/3</span>`;
+
         let daysHtml = '';
-        if (item.daysPassed === null) {
+        if (item.isResting) {
+          daysHtml = `<span class="text-purple-600 font-bold font-sans">${item.daysRemaining}일 뒤 복습</span>`;
+        } else if (item.daysPassed === null) {
           daysHtml = '<span class="text-slate-300 font-sans">미학습</span>';
         } else if (item.daysPassed === 0) {
           daysHtml = '<span class="text-emerald-600 font-bold font-sans">오늘</span>';
@@ -1535,6 +1639,7 @@
             <p class="font-bold text-slate-900 font-eng text-sm leading-tight">${item.q.en}</p>
             <p class="text-xs text-slate-500 leading-tight">${item.q.kr}</p>
           </td>
+          <td class="py-2.5 text-center">${streakHtml}</td>
           <td class="py-2.5 text-center">${rateHtml}</td>
           <td class="py-2.5 text-right pr-2">${daysHtml}</td>
         `;
@@ -1545,11 +1650,11 @@
     resetAllStatsBtn.addEventListener('click', () => {
       unlockAudioSystem();
       sound.wrong();
-      if (confirm("말문 칭칭의 모든 정답률 및 마지막 학습 기록을 초기화할까요?\n\n(※ 구글 시트 원본, ⚡ 게이지 및 🎁 선물 상자는 안전하게 유지됩니다.)")) {
+      if (confirm("말문 칭칭의 모든 정답률, 스트릭 및 졸업 기록을 초기화할까요?\n\n(※ 구글 시트 원본, ⚡ 게이지 및 🎁 선물 상자는 안전하게 유지됩니다.)")) {
         localStorage.removeItem('block_sentence_stats');
         sentenceStatsDB = {};
         renderDashboard();
-        questions = sortQuestionsByAccuracy([...questions]);
+        questions = prepareActiveQuestions(allQuestionsList);
         loadQuestion(0);
         alert("기록이 성공적으로 초기화되었습니다.");
       }
