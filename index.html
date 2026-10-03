@@ -296,8 +296,8 @@
       </div>
     </div>
 
-    <!-- 2번 박스 (1단계): 스피킹 영역 -->
-    <div id="stage1Box" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-3">
+    <!-- 2번 박스 (1단계): 스피킹 영역 (로딩 완료 전까지 숨김 처리) -->
+    <div id="stage1Box" style="display: none;" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-3">
       <p id="stage1TipText" class="text-base sm:text-lg font-black text-slate-800">
         머릿속으로 영어가 떠올랐나요?
       </p>
@@ -775,13 +775,10 @@
       if (info.label === "NEW") {
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-purple-100 text-purple-700 border-purple-300";
       } else if (info.points === 5) {
-        // 50% 미만 약점 문장 (강렬한 5점 찬스)
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-rose-100 text-rose-700 border-rose-300 animate-pulse";
       } else if (info.points === 3) {
-        // 50% ~ 80% 미만 표준 문장
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-amber-100 text-amber-800 border-amber-300";
       } else {
-        // 80% 이상 숙련 문장
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-emerald-100 text-[#02833b] border-[#a7f3d0]";
       }
     }
@@ -990,7 +987,6 @@
       if (isMatched) {
         spokenDebugText.textContent = `🎯 완벽해요: "${primarySpoken}"`;
 
-        // 💡 문제 풀기 직전의 난이도에 맞춘 게이지 점수 계산 (+5점 / +3점 / +2점)
         const potential = getSentenceGaugePotential(q.en);
         const earnedPoints = potential.points;
 
@@ -1010,7 +1006,6 @@
       }
     }
 
-    // 정답 보고 따라읽기 음성 판정 로직 (게이지 0점)
     function handleShadowSpokenResults(spokenList) {
       const q = questions[curIndex];
       const targetNorm = normalizeForSpeech(q.en);
@@ -1275,7 +1270,6 @@
     function onAnswerCorrect(gaugePoints, isSpeakingSuccess = false) {
       unlockAudioSystem();
 
-      // 💡 5점 잭팟 달성 시 화려한 팡파르와 대형 폭죽 연출
       if (gaugePoints >= 5) {
         sound.jackpotFanfare();
         confetti({ particleCount: 120, spread: 90, origin: { y: 0.6 }, colors: ['#f59e0b', '#ec4899', '#8b5cf6', '#10b981'] });
@@ -1314,7 +1308,6 @@
 
       if (isSame) {
         resetCombo();
-        // 블록 조립 성공은 항상 +1점
         onAnswerCorrect(1, false);
       } else {
         sound.wrong();
