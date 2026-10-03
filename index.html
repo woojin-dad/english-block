@@ -153,14 +153,14 @@
 
   <!-- 📊 부모님 전용 시크릿 학습 진단 대시보드 모달 (제목 5회 터치 시 등장) -->
   <div id="dashboardModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] overflow-hidden border-2 border-emerald-400 animate-combo-pop">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[92vh] overflow-hidden border-2 border-emerald-400 animate-combo-pop">
       <!-- 모달 헤더 -->
       <div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">📊</span>
+        <div class="flex items-center gap-2.5">
+          <span class="text-3xl">📊</span>
           <div>
-            <h2 class="text-lg sm:text-xl font-black text-slate-900 leading-tight">말문 칭칭 학습 진단 대시보드</h2>
-            <p class="text-xs text-slate-500 font-sans">문장별 정답률, 연속 스트릭 및 간격 복습 모니터링</p>
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 leading-tight">말문 칭칭 문장별 학습 상태 진단기</h2>
+            <p class="text-xs text-slate-500 font-sans">원샷 스트릭, 당일 세이프락, 졸업 잠복기 실시간 추적</p>
           </div>
         </div>
         <button id="closeDashboardBtn" class="text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 rounded-xl transition">
@@ -178,22 +178,23 @@
           <p class="text-[11px] text-purple-600 font-sans font-bold">🎓 졸업 (휴식 중)</p>
           <p id="dashMasteredCount" class="text-lg font-black text-purple-700">0</p>
         </div>
-        <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200">
-          <p class="text-[11px] text-slate-500 font-sans">평균 정답률</p>
-          <p id="dashAvgAccuracy" class="text-lg font-black text-sky-600">0%</p>
+        <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-emerald-200 bg-emerald-50/50">
+          <p class="text-[11px] text-emerald-600 font-sans font-bold">🛡️ 오늘 원샷 완료</p>
+          <p id="dashTodayLockedCount" class="text-lg font-black text-emerald-700">0</p>
         </div>
         <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-rose-200 bg-rose-50/50">
-          <p class="text-[11px] text-rose-500 font-sans font-bold">7일+ 방치</p>
-          <p id="dashStaleCount" class="text-lg font-black text-rose-600">0</p>
+          <p class="text-[11px] text-rose-500 font-sans font-bold">⚠️ 취약 / 재복습</p>
+          <p id="dashWeakCount" class="text-lg font-black text-rose-600">0</p>
         </div>
       </div>
 
       <!-- 탭 필터 버튼 -->
       <div class="px-4 py-2 bg-white flex items-center gap-1.5 border-b border-slate-100 text-xs overflow-x-auto">
-        <button data-filter="all" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-[#03c75a] text-white">전체</button>
-        <button data-filter="mastered" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🎓 졸업(휴식)</button>
+        <button data-filter="all" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-[#03c75a] text-white">전체 보기</button>
+        <button data-filter="locked" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🛡️ 오늘 완료</button>
+        <button data-filter="active_streak" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">⭐ 스트릭 진행 중 (1~2일)</button>
+        <button data-filter="mastered" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🎓 졸업(휴식 중)</button>
         <button data-filter="weak" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">⚠️ 약점 (&lt;60%)</button>
-        <button data-filter="stale" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🚨 방치 (7일+)</button>
         <button data-filter="new" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🆕 신규</button>
       </div>
 
@@ -202,11 +203,11 @@
         <table class="w-full text-left text-xs sm:text-sm">
           <thead>
             <tr class="text-slate-400 font-sans border-b border-slate-200">
-              <th class="pb-2 pl-2">상태</th>
+              <th class="pb-2 pl-2">현재 진행 상태</th>
               <th class="pb-2">문장 (영어 / 한글)</th>
               <th class="pb-2 text-center">원샷 스트릭</th>
               <th class="pb-2 text-center">정답률</th>
-              <th class="pb-2 text-right pr-2">마지막 학습 / 복습</th>
+              <th class="pb-2 text-right pr-2">진단 브리핑</th>
             </tr>
           </thead>
           <tbody id="dashTableBody" class="divide-y divide-slate-100">
@@ -217,7 +218,7 @@
       <!-- 모달 푸터 (초기화 및 닫기) -->
       <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
         <button id="resetAllStatsBtn" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition">
-          🗑️ 정답률 기록 초기화
+          🗑️ 전체 기록 초기화
         </button>
         <button id="closeDashboardFooterBtn" class="toy-btn px-6 py-2 rounded-xl text-sm font-bold bg-slate-800 text-white hover:bg-slate-900 transition">
           닫기
@@ -537,8 +538,8 @@
       { bg: "bg-orange-100", text: "text-orange-950", border: "border-orange-300" }
     ];
 
-    let allQuestionsList = []; // 전체 시트 문장 원본
-    let questions = [];        // 현재 출제 대상 (쿨다운 제외 및 약점순 정렬)
+    let allQuestionsList = [];
+    let questions = [];
     let curIndex = 0;
     
     let cloudState = {
@@ -550,9 +551,8 @@
 
     let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
     let isCurrentTrialRecorded = false;
-    let currentSentenceMicAttempts = 0; // 현재 문장에서 마이크 시도 횟수
+    let currentSentenceMicAttempts = 0;
 
-    // 🔥 콤보 상태 및 타이머 변수
     let micComboCount = 0;
     let comboModalTimer = null;
     let jackpotToastTimer = null;
@@ -582,8 +582,8 @@
     const resetAllStatsBtn = document.getElementById('resetAllStatsBtn');
     const dashTotalCount = document.getElementById('dashTotalCount');
     const dashMasteredCount = document.getElementById('dashMasteredCount');
-    const dashAvgAccuracy = document.getElementById('dashAvgAccuracy');
-    const dashStaleCount = document.getElementById('dashStaleCount');
+    const dashTodayLockedCount = document.getElementById('dashTodayLockedCount');
+    const dashWeakCount = document.getElementById('dashWeakCount');
     const dashTableBody = document.getElementById('dashTableBody');
     let currentDashFilter = 'all';
 
@@ -598,7 +598,6 @@
     const wordPool = document.getElementById('wordPool');
     const slotHelperText = document.getElementById('slotHelperText');
 
-    // 따라 말하기 컨테이너 요소들
     const shadowingContainer = document.getElementById('shadowingContainer');
     const shadowMicBtn = document.getElementById('shadowMicBtn');
     const shadowMicIcon = document.getElementById('shadowMicIcon');
@@ -618,7 +617,7 @@
     const clearBtn = document.getElementById('clearBtn');
 
     /* ==========================================================================
-       🎤 오늘 마이크 성공 문장 / 시도한 문장 카운터 (자정 자동 리셋 & 로컬 영구 저장)
+       🎤 오늘 마이크 성공 문장 / 시도한 문장 카운터 (자정 자동 리셋)
        ========================================================================== */
     function getTodayKey() {
       const now = new Date();
@@ -777,10 +776,14 @@
     function updateAccuracyBadgeUI(enSentence) {
       const stat = sentenceStatsDB[enSentence];
       const info = getSentenceGaugePotential(enSentence);
+      const today = getTodayKey();
 
-      const streakText = (stat && stat.dailyStreak > 0) ? ` · ⭐${stat.dailyStreak}/3` : '';
+      let streakTag = '';
+      if (stat && stat.dailyStreak > 0) {
+        streakTag = stat.lastStreakDate === today ? ` · 🛡️${stat.dailyStreak}/3` : ` · ⭐${stat.dailyStreak}/3`;
+      }
 
-      accuracyBadge.textContent = `🎯 ${info.label}${streakText} (⚡+${info.points})`;
+      accuracyBadge.textContent = `🎯 ${info.label}${streakTag} (⚡+${info.points})`;
 
       if (info.label === "NEW") {
         accuracyBadge.className = "absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-purple-100 text-purple-700 border-purple-300";
@@ -838,41 +841,34 @@
       if (isSuccess) entry.hits += 1;
       entry.lastSeen = Date.now();
 
-      // 💡 [스트릭 & 간격 반복 판정]
       if (isFirstAttemptSuccess) {
-        // 컴백 문장인데 또 첫 시도에 완벽하게 맞힌 경우 (2차 졸업: 14일 연장)
         if (isComeback || entry.masteryStage >= 1) {
           entry.dailyStreak = 0;
           entry.masteryStage = 2;
-          entry.cooldownUntil = Date.now() + (14 * 24 * 60 * 60 * 1000); // 14일 잠복
+          entry.cooldownUntil = Date.now() + (14 * 24 * 60 * 60 * 1000);
           sound.masterFanfare();
           showJackpotToast("🎓 완벽 마스터! 14일간 졸업!");
         } else {
-          // 오늘 첫 시도 스트릭을 아직 안 쌓았다면 +1
           if (entry.lastStreakDate !== today) {
             entry.dailyStreak = (entry.dailyStreak || 0) + 1;
             entry.lastStreakDate = today;
 
-            // 서로 다른 3일 연속 첫 시도 달성! (1차 졸업: 7일 잠복)
             if (entry.dailyStreak >= 3) {
               entry.dailyStreak = 0;
               entry.masteryStage = 1;
-              entry.trials = 3; // 기본 베이스 3/3 보장
+              entry.trials = 3;
               entry.hits = 3;
-              entry.cooldownUntil = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7일 잠복
+              entry.cooldownUntil = Date.now() + (7 * 24 * 60 * 60 * 1000);
               sound.masterFanfare();
               showJackpotToast("🎓 3일 연속 원샷 달성! 7일간 졸업!");
             }
           }
         }
       } else {
-        // 💡 [당일 스택 보호 (Safe-Lock)]: 
-        // 오늘 이미 원샷 성공을 따낸 문장은 같은 날 2~3회독 중 틀려도 스택이 깎이지 않고 보호됩니다.
         if (entry.lastStreakDate !== today) {
           entry.dailyStreak = 0;
         }
 
-        // 7일 만에 돌아온 문장이었는데 틀린 경우 (방식 B 안전망: 75%로 하향 후 루프 복귀)
         if (isComeback) {
           entry.cooldownUntil = 0;
           entry.masteryStage = 0;
@@ -883,14 +879,13 @@
       updateAccuracyBadgeUI(q.en);
     }
 
-    // 💡 출제 필터: 쿨다운(졸업 잠복기) 중인 문장은 제외하고, 약점 우선 정렬
     function prepareActiveQuestions(list) {
       const now = Date.now();
       
       let active = list.filter(item => {
         const stat = sentenceStatsDB[item.en];
         if (stat && stat.cooldownUntil && stat.cooldownUntil > now) {
-          return false; // 졸업 휴식 중이므로 출제 제외
+          return false;
         }
         return true;
       });
@@ -905,9 +900,9 @@
         const rateB = statB && statB.trials > 0 ? (statB.hits / statB.trials) * 100 : -1;
 
         const getPriorityTier = (rate) => {
-          if (rate === -1) return 1; // NEW
-          if (rate >= 0 && rate < 100) return 2; // 약점
-          return 3; // 100%
+          if (rate === -1) return 1;
+          if (rate >= 0 && rate < 100) return 2;
+          return 3;
         };
 
         const tierA = getPriorityTier(rateA);
@@ -1235,7 +1230,6 @@
       return Math.abs(hash);
     }
 
-    /* 💡 무한 순환 로직: 한 바퀴 끝날 때 잠복기 체크 후 자동 재소환 & 약점순 재배치 */
     function loadQuestion(idx) {
       stopSTT();
 
@@ -1486,7 +1480,7 @@
     }
 
     /* ==========================================================================
-       📊 8. 시크릿 학습 진단 대시보드 로직
+       📊 8. 시크릿 학습 진단 대시보드 로직 (직관적 상태 칩 및 진단 브리핑)
        ========================================================================== */
     function openDashboard() {
       unlockAudioSystem();
@@ -1516,11 +1510,10 @@
 
     function renderDashboard() {
       const now = Date.now();
-      const oneDayMs = 24 * 60 * 60 * 1000;
+      const today = getTodayKey();
       let masteredCount = 0;
-      let totalHitSum = 0;
-      let totalTrialSum = 0;
-      let staleCount = 0;
+      let todayLockedCount = 0;
+      let weakCount = 0;
 
       allQuestionsList.forEach(q => {
         const stat = sentenceStatsDB[q.en];
@@ -1528,28 +1521,27 @@
           if (stat.cooldownUntil && stat.cooldownUntil > now) {
             masteredCount++;
           }
-          if (stat.trials > 0) {
-            totalHitSum += stat.hits;
-            totalTrialSum += stat.trials;
-
-            const daysPassed = stat.lastSeen ? Math.floor((now - stat.lastSeen) / oneDayMs) : 999;
-            if (daysPassed >= 7 && (!stat.cooldownUntil || stat.cooldownUntil <= now)) {
-              staleCount++;
-            }
+          if (stat.lastStreakDate === today) {
+            todayLockedCount++;
+          }
+          const rate = stat.trials > 0 ? (stat.hits / stat.trials) * 100 : -1;
+          if (stat.trials > 0 && rate < 60 && (!stat.cooldownUntil || stat.cooldownUntil <= now)) {
+            weakCount++;
           }
         }
       });
 
       dashTotalCount.textContent = allQuestionsList.length;
       dashMasteredCount.textContent = masteredCount;
-      dashAvgAccuracy.textContent = totalTrialSum > 0 ? `${Math.round((totalHitSum / totalTrialSum) * 100)}%` : '0%';
-      dashStaleCount.textContent = staleCount;
+      dashTodayLockedCount.textContent = todayLockedCount;
+      dashWeakCount.textContent = weakCount;
 
       renderDashboardTable();
     }
 
     function renderDashboardTable() {
       const now = Date.now();
+      const today = getTodayKey();
       const oneDayMs = 24 * 60 * 60 * 1000;
       dashTableBody.innerHTML = '';
 
@@ -1559,55 +1551,72 @@
         const hits = stat ? stat.hits : 0;
         const streak = stat ? (stat.dailyStreak || 0) : 0;
         const rate = trials > 0 ? Math.round((hits / trials) * 100) : -1;
-        const daysPassed = stat && stat.lastSeen ? Math.floor((now - stat.lastSeen) / oneDayMs) : (trials > 0 ? 999 : null);
         const isResting = stat && stat.cooldownUntil && stat.cooldownUntil > now;
         const daysRemaining = isResting ? Math.ceil((stat.cooldownUntil - now) / oneDayMs) : 0;
+        const isTodayLocked = stat && stat.lastStreakDate === today;
+        const daysPassed = stat && stat.lastSeen ? Math.floor((now - stat.lastSeen) / oneDayMs) : (trials > 0 ? 999 : null);
 
-        let status = 'NEW';
+        let statusKey = 'NEW';
+        let statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-slate-100 text-slate-600">🆕 신규</span>';
+        let briefText = '아직 도전하지 않은 문장입니다.';
+
         if (isResting) {
-          status = 'MASTERED';
-        } else if (trials > 0) {
-          if (daysPassed !== null && daysPassed >= 7) {
-            status = 'STALE';
-          } else if (rate < 60) {
-            status = 'WEAK';
+          statusKey = 'MASTERED';
+          if (stat.masteryStage === 2) {
+            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-purple-100 text-purple-700 border border-purple-200">👑 완벽 마스터</span>';
+            briefText = `컴백 원샷 통과! <b class="text-purple-600">${daysRemaining}일 뒤</b> 최종 점검`;
           } else {
-            status = 'GOOD';
+            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-indigo-100 text-indigo-700 border border-indigo-200">🎓 1차 졸업</span>';
+            briefText = `3일 연속 원샷 성공! <b class="text-indigo-600">${daysRemaining}일 뒤</b> 기습 컴백`;
+          }
+        } else if (isTodayLocked) {
+          statusKey = 'LOCKED';
+          statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">🛡️ 오늘 완료</span>';
+          briefText = streak === 2 
+            ? '오늘 2일차 통과! <b class="text-emerald-600">내일 1번 더 맞히면 7일 졸업!</b>' 
+            : '오늘 1일차 통과! 당일 세이프락 보호 중';
+        } else if (streak > 0) {
+          statusKey = 'ACTIVE_STREAK';
+          statusBadge = `<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-amber-100 text-amber-800 border border-amber-300">⭐ ${streak}일 누적</span>`;
+          briefText = streak === 2 
+            ? '졸업 직전! <b class="text-amber-600">오늘 원샷 성공 시 7일 졸업!</b>' 
+            : '1일 성공 유지 중. 오늘 원샷 시 2/3스택 달성';
+        } else if (trials > 0) {
+          if (rate < 60) {
+            statusKey = 'WEAK';
+            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-rose-100 text-rose-700 border border-rose-200">⚠️ 약점 재복습</span>';
+            briefText = '정답률 낮음 (5점 보너스 우선 출제 대상)';
+          } else if (daysPassed !== null && daysPassed >= 7) {
+            statusKey = 'STALE';
+            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-orange-100 text-orange-700 border border-orange-200">🚨 장기 방치</span>';
+            briefText = `${daysPassed}일 동안 풀지 않은 문장`;
+          } else {
+            statusKey = 'GOOD';
+            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-sky-100 text-sky-700 border border-sky-200">🔄 순환 학습</span>';
+            briefText = '원샷 스트릭 도전 준비 상태';
           }
         }
 
-        return { q, trials, hits, streak, rate, daysPassed, isResting, daysRemaining, status };
+        return { q, trials, hits, streak, rate, isResting, isTodayLocked, statusKey, statusBadge, briefText };
       });
 
       const filtered = rowsData.filter(item => {
-        if (currentDashFilter === 'mastered') return item.status === 'MASTERED';
-        if (currentDashFilter === 'stale') return item.status === 'STALE';
-        if (currentDashFilter === 'weak') return item.status === 'WEAK';
-        if (currentDashFilter === 'new') return item.status === 'NEW';
+        if (currentDashFilter === 'locked') return item.isTodayLocked;
+        if (currentDashFilter === 'active_streak') return item.streak > 0 && !item.isResting;
+        if (currentDashFilter === 'mastered') return item.isResting;
+        if (currentDashFilter === 'weak') return item.statusKey === 'WEAK';
+        if (currentDashFilter === 'new') return item.statusKey === 'NEW';
         return true;
       });
 
       if (filtered.length === 0) {
-        dashTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400 font-sans">해당하는 문장이 없습니다. ✨</td></tr>`;
+        dashTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400 font-sans">해당 조건의 문장이 없습니다. ✨</td></tr>`;
         return;
       }
 
       filtered.forEach(item => {
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition";
-
-        let badgeHtml = '';
-        if (item.status === 'MASTERED') {
-          badgeHtml = '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-100 text-purple-700">🎓 졸업</span>';
-        } else if (item.status === 'NEW') {
-          badgeHtml = '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600">NEW</span>';
-        } else if (item.status === 'STALE') {
-          badgeHtml = '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-100 text-rose-700">🚨 방치</span>';
-        } else if (item.status === 'WEAK') {
-          badgeHtml = '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-800">⚠️ 약점</span>';
-        } else {
-          badgeHtml = '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-800">✅ 양호</span>';
-        }
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
 
         let rateHtml = '';
         if (item.rate === -1) {
@@ -1617,31 +1626,24 @@
           rateHtml = `<span class="font-black ${colorClass}">${item.rate}%</span> <span class="text-[10px] text-slate-400 font-sans">(${item.hits}/${item.trials})</span>`;
         }
 
-        let streakHtml = `<span class="font-bold ${item.streak >= 2 ? 'text-amber-600 font-black' : 'text-slate-500'}">⭐ ${item.streak}/3</span>`;
-
-        let daysHtml = '';
+        let streakHtml = '';
         if (item.isResting) {
-          daysHtml = `<span class="text-purple-600 font-bold font-sans">${item.daysRemaining}일 뒤 복습</span>`;
-        } else if (item.daysPassed === null) {
-          daysHtml = '<span class="text-slate-300 font-sans">미학습</span>';
-        } else if (item.daysPassed === 0) {
-          daysHtml = '<span class="text-emerald-600 font-bold font-sans">오늘</span>';
-        } else if (item.daysPassed >= 999) {
-          daysHtml = '<span class="text-slate-400 font-sans">기록 전</span>';
+          streakHtml = '<span class="text-purple-600 font-black">🎓 졸업</span>';
+        } else if (item.streak > 0) {
+          streakHtml = `<span class="font-black ${item.streak === 2 ? 'text-rose-600 animate-pulse' : 'text-amber-600'}">⭐ ${item.streak}/3</span>`;
         } else {
-          const isDanger = item.daysPassed >= 7;
-          daysHtml = `<span class="font-sans ${isDanger ? 'text-rose-600 font-bold' : 'text-slate-500'}">${item.daysPassed}일 전</span>`;
+          streakHtml = '<span class="text-slate-300 font-sans">0/3</span>';
         }
 
         tr.innerHTML = `
-          <td class="py-2.5 pl-2">${badgeHtml}</td>
-          <td class="py-2.5 pr-2">
+          <td class="py-3 pl-2">${item.statusBadge}</td>
+          <td class="py-3 pr-2">
             <p class="font-bold text-slate-900 font-eng text-sm leading-tight">${item.q.en}</p>
             <p class="text-xs text-slate-500 leading-tight">${item.q.kr}</p>
           </td>
-          <td class="py-2.5 text-center">${streakHtml}</td>
-          <td class="py-2.5 text-center">${rateHtml}</td>
-          <td class="py-2.5 text-right pr-2">${daysHtml}</td>
+          <td class="py-3 text-center">${streakHtml}</td>
+          <td class="py-3 text-center">${rateHtml}</td>
+          <td class="py-3 text-right pr-2 text-xs font-sans text-slate-600">${item.briefText}</td>
         `;
         dashTableBody.appendChild(tr);
       });
