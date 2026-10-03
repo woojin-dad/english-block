@@ -218,7 +218,7 @@
       <!-- 모달 푸터 (초기화 및 닫기) -->
       <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
         <button id="resetAllStatsBtn" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition">
-          🗑️ 전체 기록 초기화
+          🗑️️ 전체 기록 초기화
         </button>
         <button id="closeDashboardFooterBtn" class="toy-btn px-6 py-2 rounded-xl text-sm font-bold bg-slate-800 text-white hover:bg-slate-900 transition">
           닫기
@@ -283,23 +283,30 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스 -->
-    <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[130px] relative">
+    <!-- 1번 박스 (상단 헤더 3단 배치: 좌측 콤보 / 중앙 회차 및 번호 / 우측 정답률) -->
+    <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[140px] relative">
+      
+      <!-- [좌측 상단] 콤보 배지 -->
       <div id="comboBadge" style="display: none;" class="absolute top-3.5 left-4 sm:top-4 sm:left-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-gradient-to-r from-orange-500 to-rose-500 text-white border-orange-400 animate-pulse">
         🔥 1 COMBO
       </div>
 
-      <!-- 정답률 및 획득 가능 게이지 표시 배지 -->
+      <!-- 💡 [중앙 상단] 회차 및 실제 출제 문장 진행도 배지 (예: 🏃 1회차 · 4/15) -->
+      <div id="roundProgressBadge" class="absolute top-3.5 left-1/2 -translate-x-1/2 sm:top-4 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-700 border-slate-300 font-sans">
+        🏃 1회차 · 1/1
+      </div>
+
+      <!-- [우측 상단] 정답률 및 획득 가능 게이지 표시 배지 -->
       <div id="accuracyBadge" class="absolute top-3.5 right-4 sm:top-4 sm:right-6 text-xs sm:text-sm font-black px-3 py-1 rounded-full border shadow-sm transition-all">
         🎯 NEW (⚡+5)
       </div>
 
-      <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug px-4">
+      <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug px-4 mt-4 sm:mt-2">
         문장을 불러오는 중입니다... 🧩
       </div>
     </div>
 
-    <!-- 2번 박스 (1단계): 스피킹 영역 (로딩 완료 전까지 숨김 처리) -->
+    <!-- 2번 박스 (1단계): 스피킹 영역 -->
     <div id="stage1Box" style="display: none;" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 flex flex-col items-center justify-center text-center gap-3">
       <p id="stage1TipText" class="text-base sm:text-lg font-black text-slate-800">
         머릿속으로 영어가 떠올랐나요?
@@ -351,7 +358,7 @@
         </div>
       </div>
 
-      <!-- 단어 블록 보관함 영역 (정답 보기 시 숨겨짐) -->
+      <!-- 단어 블록 보관함 영역 -->
       <div id="wordPoolContainer" class="bg-white rounded-3xl p-4 sm:p-5 shadow-lg border border-emerald-100">
         <div class="flex items-center justify-between mb-2.5">
           <span class="text-sm sm:text-base font-bold text-slate-700 flex items-center gap-1">
@@ -363,7 +370,7 @@
         </div>
       </div>
 
-      <!-- 정답 보고 따라읽기 전용 안내 및 마이크 영역 -->
+      <!-- 정답 보고 따라읽기 전용 마이크 영역 -->
       <div id="shadowingContainer" style="display: none;" class="bg-amber-50 rounded-3xl p-5 shadow-lg border-2 border-amber-300 flex flex-col items-center justify-center text-center gap-3">
         <p class="text-base sm:text-lg font-black text-amber-950">
           정답 문장을 보고 큰 소리로 따라 말해보세요! 📢
@@ -541,6 +548,7 @@
     let allQuestionsList = [];
     let questions = [];
     let curIndex = 0;
+    let currentLoopCount = 1; // 💡 현재 몇 바퀴(회차) 돌고 있는지 카운트
     
     let cloudState = {
       coins: 0,
@@ -568,6 +576,7 @@
     const todayMicCount = document.getElementById('todayMicCount');
     const koreanSentence = document.getElementById('koreanSentence');
     const accuracyBadge = document.getElementById('accuracyBadge');
+    const roundProgressBadge = document.getElementById('roundProgressBadge');
     const comboBadge = document.getElementById('comboBadge');
     const jackpotToast = document.getElementById('jackpotToast');
     const jackpotToastText = document.getElementById('jackpotToastText');
@@ -796,6 +805,13 @@
       }
     }
 
+    function updateRoundProgressBadgeUI() {
+      const totalActive = questions.length;
+      const currentNumber = curIndex + 1;
+      const loopIcon = currentLoopCount > 1 ? '🔥' : '🏃';
+      roundProgressBadge.textContent = `${loopIcon} ${currentLoopCount}회차 · ${currentNumber}/${totalActive}`;
+    }
+
     function showJackpotToast(msg = "JACKPOT! +5점 획득!") {
       if (jackpotToastTimer) clearTimeout(jackpotToastTimer);
       jackpotToastText.textContent = msg;
@@ -877,6 +893,7 @@
 
       localStorage.setItem('block_sentence_stats', JSON.stringify(sentenceStatsDB));
       updateAccuracyBadgeUI(q.en);
+      updateRoundProgressBadgeUI();
     }
 
     function prepareActiveQuestions(list) {
@@ -1105,7 +1122,7 @@
         nextBtn.style.display = "inline-flex";
       } else {
         sound.wrong();
-        shadowDebugText.innerHTML = `⚠️ <span class="text-rose-600 font-bold">문장과 달라요. 다시 또박또박 읽어보세요!</span>`;
+        shadowDebugText.innerHTML = `⚠️️ <span class="text-rose-600 font-bold">문장과 달라요. 다시 또박또박 읽어보세요!</span>`;
       }
     }
 
@@ -1230,6 +1247,7 @@
       return Math.abs(hash);
     }
 
+    /* 💡 로딩 및 회차 순환 로직 */
     function loadQuestion(idx) {
       stopSTT();
 
@@ -1238,7 +1256,9 @@
         return;
       }
 
+      // 한 바퀴를 완주한 경우: 회차 카운트 +1 및 재배치
       if (idx >= questions.length) {
+        currentLoopCount += 1;
         questions = prepareActiveQuestions(allQuestionsList);
         curIndex = 0;
       } else {
@@ -1255,6 +1275,7 @@
       koreanSentence.textContent = q.kr;
 
       updateAccuracyBadgeUI(q.en);
+      updateRoundProgressBadgeUI(); // 💡 중앙 상단 진행도 갱신
       updateComboUI();
 
       assembledSlots.innerHTML = '';
@@ -1480,7 +1501,7 @@
     }
 
     /* ==========================================================================
-       📊 8. 시크릿 학습 진단 대시보드 로직 (직관적 상태 칩 및 진단 브리핑)
+       📊 8. 시크릿 학습 진단 대시보드 로직
        ========================================================================== */
     function openDashboard() {
       unlockAudioSystem();
@@ -1656,6 +1677,7 @@
         localStorage.removeItem('block_sentence_stats');
         sentenceStatsDB = {};
         renderDashboard();
+        currentLoopCount = 1;
         questions = prepareActiveQuestions(allQuestionsList);
         loadQuestion(0);
         alert("기록이 성공적으로 초기화되었습니다.");
