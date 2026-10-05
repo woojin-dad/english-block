@@ -154,7 +154,6 @@
   <!-- 📊 부모님 전용 시크릿 학습 진단 대시보드 모달 (제목 5회 터치 시 등장) -->
   <div id="dashboardModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
     <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[92vh] overflow-hidden border-2 border-emerald-400 animate-combo-pop">
-      <!-- 모달 헤더 -->
       <div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <span class="text-3xl">📊</span>
@@ -168,7 +167,6 @@
         </button>
       </div>
 
-      <!-- 요약 통계 카드 4종 -->
       <div class="p-3 sm:p-4 bg-slate-100/70 border-b border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center select-text">
         <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200">
           <p class="text-[11px] text-slate-500 font-sans">전체 문장</p>
@@ -188,7 +186,6 @@
         </div>
       </div>
 
-      <!-- 탭 필터 버튼 -->
       <div class="px-4 py-2 bg-white flex items-center gap-1.5 border-b border-slate-100 text-xs overflow-x-auto">
         <button data-filter="all" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-[#03c75a] text-white">전체 보기</button>
         <button data-filter="locked" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🛡️ 오늘 완료</button>
@@ -198,7 +195,6 @@
         <button data-filter="new" class="dash-tab px-3 py-1.5 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">🆕 신규</button>
       </div>
 
-      <!-- 문장별 상세 테이블 -->
       <div class="flex-1 overflow-y-auto dashboard-table-container p-3 sm:p-4 select-text">
         <table class="w-full text-left text-xs sm:text-sm">
           <thead>
@@ -215,7 +211,6 @@
         </table>
       </div>
 
-      <!-- 모달 푸터 (초기화 및 닫기) -->
       <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
         <button id="resetAllStatsBtn" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition">
           🗑️ 전체 기록 초기화
@@ -227,7 +222,7 @@
     </div>
   </div>
 
-  <!-- 🔥 10콤보 달성 축하 모달 팝업 (1.8초 자동 닫힘) -->
+  <!-- 🔥 10콤보 달성 축하 모달 팝업 -->
   <div id="comboModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 cursor-pointer">
     <div class="animate-combo-pop bg-gradient-to-b from-amber-300 via-orange-400 to-rose-500 p-1 rounded-3xl shadow-2xl max-w-sm w-full text-center pointer-events-auto">
       <div class="bg-white rounded-[22px] p-6 sm:p-8 flex flex-col items-center">
@@ -258,15 +253,12 @@
       </div>
     </div>
 
-    <!-- 우측 배지 그룹 -->
     <div class="flex items-center gap-2 sm:gap-3 ml-auto">
-      <!-- 🎤 오늘 마이크 성공 문장 / 시도한 문장 카운터 -->
       <div class="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-2xl shadow-inner font-black text-rose-600 text-sm sm:text-base select-none" title="오늘 마이크 성공 문장 수 / 오늘 푼 문장 수 (자정 자동 리셋)">
         <span class="text-base sm:text-lg">🎤</span>
         <span id="todayMicCount" class="font-eng font-bold text-rose-600 text-sm sm:text-base min-w-[20px] text-center inline-block">0/0 (0%)</span>
       </div>
 
-      <!-- ⚡ 매칭게임 연동 게이지 & 선물 상자 -->
       <div class="flex items-center gap-2 sm:gap-3 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-inner">
         <span class="text-lg">⚡</span>
         <div class="gauge-bg">
@@ -283,7 +275,7 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
-    <!-- 1번 박스 (상단 헤더 3단 배치: 좌측 콤보 / 중앙 회차 및 번호 / 우측 정답률) -->
+    <!-- 1번 박스 -->
     <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[140px] relative">
       
       <!-- [좌측 상단] 콤보 배지 -->
@@ -291,7 +283,7 @@
         🔥 1 COMBO
       </div>
 
-      <!-- [중앙 상단] 회차 및 실제 출제 문장 진행도 배지 (예: 🏃 1회차 · 4/15) -->
+      <!-- [중앙 상단] 회차 및 실제 출제 문장 진행도 배지 (하루 단위 누적 & 자정 리셋) -->
       <div id="roundProgressBadge" class="absolute top-3.5 left-1/2 -translate-x-1/2 sm:top-4 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-700 border-slate-300 font-sans">
         🏃 1회차 · 1/1
       </div>
@@ -301,7 +293,6 @@
         🎯 NEW (⚡+5)
       </div>
 
-      <!-- 💡 상단 뱃지들과 겹치지 않고 시원하게 떨어지도록 mt-8 sm:mt-9 적용 -->
       <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug px-4 mt-8 sm:mt-9">
         문장을 불러오는 중입니다... 🧩
       </div>
@@ -549,7 +540,6 @@
     let allQuestionsList = [];
     let questions = [];
     let curIndex = 0;
-    let currentLoopCount = 1;
     
     let cloudState = {
       coins: 0,
@@ -627,13 +617,39 @@
     const clearBtn = document.getElementById('clearBtn');
 
     /* ==========================================================================
-       🎤 오늘 마이크 성공 문장 / 시도한 문장 카운터 (자정 자동 리셋)
+       📅 날짜 키 유틸리티 & 오늘 하루 회차(Loop) 저장 시스템 (자정 자동 리셋)
        ========================================================================== */
     function getTodayKey() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
 
+    function getTodayLoopCount() {
+      const today = getTodayKey();
+      const saved = JSON.parse(localStorage.getItem('today_loop_info')) || {};
+      if (saved.date !== today) {
+        localStorage.setItem('today_loop_info', JSON.stringify({ date: today, loop: 1 }));
+        return 1;
+      }
+      return Number(saved.loop) || 1;
+    }
+
+    function incrementTodayLoopCount() {
+      const today = getTodayKey();
+      const current = getTodayLoopCount();
+      const nextLoop = current + 1;
+      localStorage.setItem('today_loop_info', JSON.stringify({ date: today, loop: nextLoop }));
+      return nextLoop;
+    }
+
+    function resetTodayLoopCount() {
+      const today = getTodayKey();
+      localStorage.setItem('today_loop_info', JSON.stringify({ date: today, loop: 1 }));
+    }
+
+    /* ==========================================================================
+       🎤 오늘 마이크 성공 문장 / 시도한 문장 카운터 (자정 자동 리셋)
+       ========================================================================== */
     function updateTodayMicBadgeUI(hits, totalSentences) {
       const rate = totalSentences > 0 ? Math.round((hits / totalSentences) * 100) : 0;
       todayMicCount.textContent = `${hits}/${totalSentences} (${rate}%)`;
@@ -809,8 +825,9 @@
     function updateRoundProgressBadgeUI() {
       const totalActive = questions.length;
       const currentNumber = curIndex + 1;
-      const loopIcon = currentLoopCount > 1 ? '🔥' : '🏃';
-      roundProgressBadge.textContent = `${loopIcon} ${currentLoopCount}회차 · ${currentNumber}/${totalActive}`;
+      const currentLoop = getTodayLoopCount();
+      const loopIcon = currentLoop > 1 ? '🔥' : '🏃';
+      roundProgressBadge.textContent = `${loopIcon} ${currentLoop}회차 · ${currentNumber}/${totalActive}`;
     }
 
     function showJackpotToast(msg = "JACKPOT! +5점 획득!") {
@@ -1123,7 +1140,7 @@
         nextBtn.style.display = "inline-flex";
       } else {
         sound.wrong();
-        shadowDebugText.innerHTML = `⚠️ <span class="text-rose-600 font-bold">문장과 달라요. 다시 또박또박 읽어보세요!</span>`;
+        shadowDebugText.innerHTML = `⚠️️ <span class="text-rose-600 font-bold">문장과 달라요. 다시 또박또박 읽어보세요!</span>`;
       }
     }
 
@@ -1248,6 +1265,7 @@
       return Math.abs(hash);
     }
 
+    /* 💡 로딩 및 회차 순환 로직 (하루 단위 누적 & 자정 리셋) */
     function loadQuestion(idx) {
       stopSTT();
 
@@ -1256,8 +1274,9 @@
         return;
       }
 
+      // 한 바퀴를 완주한 경우: 오늘 총 회차 +1 누적 저장 및 재정렬
       if (idx >= questions.length) {
-        currentLoopCount += 1;
+        incrementTodayLoopCount();
         questions = prepareActiveQuestions(allQuestionsList);
         curIndex = 0;
       } else {
@@ -1675,8 +1694,8 @@
       if (confirm("말문 칭칭의 모든 정답률, 스트릭 및 졸업 기록을 초기화할까요?\n\n(※ 구글 시트 원본, ⚡ 게이지 및 🎁 선물 상자는 안전하게 유지됩니다.)")) {
         localStorage.removeItem('block_sentence_stats');
         sentenceStatsDB = {};
+        resetTodayLoopCount();
         renderDashboard();
-        currentLoopCount = 1;
         questions = prepareActiveQuestions(allQuestionsList);
         loadQuestion(0);
         alert("기록이 성공적으로 초기화되었습니다.");
