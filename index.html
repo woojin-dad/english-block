@@ -100,7 +100,6 @@
       border-color: #b91c1c !important;
     }
 
-    /* 콤보 및 팝업 애니메이션 */
     @keyframes comboPopIn {
       0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
       60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
@@ -110,7 +109,6 @@
       animation: comboPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
-    /* 잭팟 플로팅 애니메이션 (2.8초 동안 편안하게 노출) */
     @keyframes jackpotFloat {
       0% { transform: translate(-50%, 20px) scale(0.6); opacity: 0; }
       10% { transform: translate(-50%, 0) scale(1.05); opacity: 1; }
@@ -121,7 +119,6 @@
       animation: jackpotFloat 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     }
 
-    /* 마이크 카운트 숫자 증가 팝 애니메이션 */
     @keyframes countPop {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); color: #e11d48; }
@@ -131,7 +128,6 @@
       animation: countPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    /* 대시보드 커스텀 스크롤바 */
     .dashboard-table-container::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -275,15 +271,28 @@
   <!-- 메인 게임 영역 -->
   <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-3.5">
     
+    <!-- 🏆 [올 클리어 카드] 오늘 도전할 문장이 모두 끝났을 때 노출 -->
+    <div id="allClearCard" style="display: none;" class="bg-white rounded-3xl p-8 sm:p-12 shadow-2xl border-4 border-amber-300 text-center flex flex-col items-center justify-center gap-4 animate-combo-pop">
+      <div class="text-7xl sm:text-8xl animate-bounce">🏆</div>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">오늘의 문장 완벽 마스터!</h2>
+      <p class="text-base sm:text-xl font-bold text-emerald-700">
+        오늘 도전해야 할 모든 문장의 🛡️ 원샷 도장을 획득했습니다! 🎉
+      </p>
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 max-w-md w-full shadow-inner text-sm sm:text-base text-slate-700 font-sans space-y-1.5">
+        <p>💡 오늘 완료된 문장은 내일 자정까지 푹 쉬게 됩니다.</p>
+        <p class="font-bold text-amber-900">오늘 두뇌 트레이닝 대성공! 푹 쉬고 내일 만나요! 👍</p>
+      </div>
+    </div>
+
     <!-- 1번 박스 -->
-    <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[140px] relative">
+    <div id="box1" class="bg-white rounded-3xl p-6 sm:p-10 shadow-lg border border-emerald-100 text-center flex flex-col items-center justify-center min-h-[140px] relative">
       
       <!-- [좌측 상단] 콤보 배지 -->
       <div id="comboBadge" style="display: none;" class="absolute top-3.5 left-4 sm:top-4 sm:left-6 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-gradient-to-r from-orange-500 to-rose-500 text-white border-orange-400 animate-pulse">
         🔥 1 COMBO
       </div>
 
-      <!-- [중앙 상단] 회차 및 실제 출제 문장 진행도 배지 (하루 단위 누적 & 자정 리셋) -->
+      <!-- [중앙 상단] 회차 및 실제 출제 문장 진행도 배지 -->
       <div id="roundProgressBadge" class="absolute top-3.5 left-1/2 -translate-x-1/2 sm:top-4 text-xs sm:text-sm font-black px-3.5 py-1 rounded-full border shadow-sm bg-slate-100 text-slate-700 border-slate-300 font-sans">
         🏃 1회차 · 1/1
       </div>
@@ -293,7 +302,7 @@
         🎯 NEW (⚡+5)
       </div>
 
-      <!-- 시원한 여백 (mt-8 sm:mt-9) -->
+      <!-- 여유로운 여백 (mt-8 sm:mt-9) -->
       <div id="koreanSentence" class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug px-4 mt-8 sm:mt-9">
         문장을 불러오는 중입니다... 🧩
       </div>
@@ -377,7 +386,7 @@
     </div>
 
     <!-- 하단 컨트롤 버튼 바 -->
-    <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
+    <div id="controlButtonBar" class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-1 pb-4">
       <button id="checkBlockBtn" style="display: none;" class="toy-btn bg-[#03c75a] hover:bg-[#029f48] text-white font-bold text-base sm:text-lg px-6 sm:px-10 py-3 rounded-2xl flex items-center gap-1.5 shadow-md">
         <span>✨ 블록 정답 확인</span>
       </button>
@@ -555,7 +564,7 @@
 
     let micComboCount = 0;
     let comboModalTimer = null;
-    let jackpotToastTimer = null; // 💡 잭팟 토스트 타이머
+    let jackpotToastTimer = null;
 
     let stage = 1;
     let isRecording = false;
@@ -566,6 +575,8 @@
     const gaugeFill = document.getElementById('gaugeFill');
     const giftCount = document.getElementById('giftCount');
     const todayMicCount = document.getElementById('todayMicCount');
+    const box1 = document.getElementById('box1');
+    const allClearCard = document.getElementById('allClearCard');
     const koreanSentence = document.getElementById('koreanSentence');
     const accuracyBadge = document.getElementById('accuracyBadge');
     const roundProgressBadge = document.getElementById('roundProgressBadge');
@@ -605,6 +616,7 @@
     const shadowMicLabel = document.getElementById('shadowMicLabel');
     const shadowDebugText = document.getElementById('shadowDebugText');
 
+    const controlButtonBar = document.getElementById('controlButtonBar');
     const mainMicBtn = document.getElementById('mainMicBtn');
     const mainMicIcon = document.getElementById('mainMicIcon');
     const mainMicLabel = document.getElementById('mainMicLabel');
@@ -807,7 +819,7 @@
 
       let streakTag = '';
       if (stat && stat.dailyStreak > 0) {
-        streakTag = stat.lastStreakDate === today ? ` · 🛡️️${stat.dailyStreak}/3` : ` · ⭐${stat.dailyStreak}/3`;
+        streakTag = stat.lastStreakDate === today ? ` · 🛡️${stat.dailyStreak}/3` : ` · ⭐${stat.dailyStreak}/3`;
       }
 
       accuracyBadge.textContent = `🎯 ${info.label}${streakTag} (⚡+${info.points})`;
@@ -831,7 +843,6 @@
       roundProgressBadge.textContent = `${loopIcon} ${currentLoop}회차 · ${currentNumber}/${totalActive}`;
     }
 
-    // 💡 잭팟 토스트: 2.8초 동안 여유롭게 노출 (모든 잭팟 공통 적용)
     function showJackpotToast(msg = "JACKPOT! +5점 획득!") {
       if (jackpotToastTimer) clearTimeout(jackpotToastTimer);
       jackpotToastText.textContent = msg;
@@ -845,7 +856,6 @@
       }, 2800);
     }
 
-    // 💡 잭팟 토스트 강제 닫기 (다음 문제 전환 시 잔상 원천 방지)
     function hideJackpotToastImmediately() {
       if (jackpotToastTimer) clearTimeout(jackpotToastTimer);
       jackpotToast.style.display = 'none';
@@ -888,6 +898,7 @@
         if (isComeback || entry.masteryStage >= 1) {
           entry.dailyStreak = 0;
           entry.masteryStage = 2;
+          entry.lastStreakDate = today;
           entry.cooldownUntil = Date.now() + (14 * 24 * 60 * 60 * 1000);
           sound.masterFanfare();
           showJackpotToast("🎓 완벽 마스터! 14일간 졸업!");
@@ -923,18 +934,27 @@
       updateRoundProgressBadgeUI();
     }
 
+    // 💡 출제 문장 필터링: 졸업(cooldown) 제외 + 오늘 이미 원샷 달성(🛡️)한 문장 제외
     function prepareActiveQuestions(list) {
       const now = Date.now();
+      const today = getTodayKey();
       
       let active = list.filter(item => {
         const stat = sentenceStatsDB[item.en];
-        if (stat && stat.cooldownUntil && stat.cooldownUntil > now) {
+        if (!stat) return true;
+
+        // 1. 졸업(휴식 중)인 문장 제외
+        if (stat.cooldownUntil && stat.cooldownUntil > now) {
           return false;
         }
+
+        // 2. 오늘 이미 원샷(+1스택)을 성공해 세이프락 걸린 문장 제외
+        if (stat.lastStreakDate === today) {
+          return false;
+        }
+
         return true;
       });
-
-      if (active.length === 0) active = [...list];
 
       return active.sort((a, b) => {
         const statA = sentenceStatsDB[a.en];
@@ -960,6 +980,22 @@
         }
         return 0;
       });
+    }
+
+    // 💡 오늘 학습할 문장이 0개가 되었을 때 표시하는 올 클리어 화면
+    function renderAllClearScreen() {
+      box1.style.display = "none";
+      stage1Box.style.display = "none";
+      speakingSuccessBox.style.display = "none";
+      stage2Box.style.display = "none";
+      controlButtonBar.style.display = "none";
+      allClearCard.style.display = "flex";
+
+      sound.masterFanfare();
+      confetti({ particleCount: 160, spread: 100, origin: { y: 0.5 }, colors: ['#f59e0b', '#10b981', '#6366f1', '#ec4899'] });
+      setTimeout(() => {
+        confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      }, 500);
     }
 
     function normalizeForSpeech(str) {
@@ -1274,16 +1310,12 @@
       return Math.abs(hash);
     }
 
-    /* 💡 로딩 및 회차 순환 로직 */
+    /* 💡 로딩 및 회차 순환 로직 (오늘 완료된 문장 제외 및 올 클리어 판정) */
     function loadQuestion(idx) {
       stopSTT();
-      hideJackpotToastImmediately(); // 💡 문제 전환 시 잭팟 토스트 즉시 숨김 방어
+      hideJackpotToastImmediately();
 
-      if (questions.length === 0) {
-        koreanSentence.textContent = "문장을 불러올 수 없습니다. 구글 시트를 확인해주세요.";
-        return;
-      }
-
+      // 한 바퀴를 완주한 경우: 새 회차 카운트 +1 및 남은 문장 재집계
       if (idx >= questions.length) {
         incrementTodayLoopCount();
         questions = prepareActiveQuestions(allQuestionsList);
@@ -1291,6 +1323,16 @@
       } else {
         curIndex = idx;
       }
+
+      // 오늘 풀어야 할 문장이 더 이상 없는 경우 (올 클리어!)
+      if (questions.length === 0) {
+        renderAllClearScreen();
+        return;
+      }
+
+      box1.style.display = "flex";
+      controlButtonBar.style.display = "flex";
+      allClearCard.style.display = "none";
 
       isCurrentTrialRecorded = false;
       currentSentenceMicAttempts = 0;
@@ -1445,7 +1487,6 @@
       }
     });
 
-    // 💡 다음 문제 버튼 클릭 시 잭팟 토스트가 남아있으면 즉시 닫고 다음 문제 로드
     nextBtn.addEventListener('click', () => {
       unlockAudioSystem();
       sound.pop();
