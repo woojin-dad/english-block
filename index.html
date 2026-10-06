@@ -528,7 +528,7 @@
     }
 
     /* ==========================================================================
-       3. 구글 시트 & 클라우드 연동
+       3. 구글 시트 & 클라우드 연동 (매칭게임 완전 호환 오프라인 안전장치 탑재)
        ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
@@ -551,11 +551,14 @@
     let questions = [];
     let curIndex = 0;
     
+    // 🛡️ [안전장치 1] 매칭게임과 동일한 로컬 백업 금고(woojin_wallet_backup)를 1차 기본값으로 채택
+    let savedWallet = JSON.parse(localStorage.getItem('woojin_wallet_backup')) || { coins: 0, matched: 0, gifts: 0 };
     let cloudState = {
-      coins: 0,
-      totalMatchedCount: 0,
-      giftCount: 0,
-      maxGauge: 450
+      coins: savedWallet.coins || 0,
+      totalMatchedCount: savedWallet.matched || 0,
+      giftCount: savedWallet.gifts || 0,
+      maxGauge: 500,
+      isLoadedFromCloud: false // 🟢 클라우드 데이터 정상 확인 밸브
     };
 
     let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
@@ -701,6 +704,7 @@
       todayMicCount.classList.add('animate-count-pop');
     }
 
+    // 🛡️️ [안전장치 2] 클라우드 로드 성공 시에만 갱신 & 시트 우선권 100% 보장 & 로컬 금고 동기화
     async function syncFromCloud() {
       try {
         const res = await fetch(CLOUD_SCRIPT_URL);
@@ -709,21 +713,55 @@
           cloudState.coins = Number(data.coins) || 0;
           cloudState.giftCount = Number(data.gifts) || 0;
           cloudState.totalMatchedCount = Number(data.matched) || 0;
-          cloudState.maxGauge = 450;
+          cloudState.maxGauge = Number(data.maxGauge) || 500;
+          cloudState.isLoadedFromCloud = true; // 🟢 클라우드 정상 수신 확인
+
+          // 매칭게임과 동일한 로컬 백업 금고 최신화
+          localStorage.setItem('woojin_wallet_backup', JSON.stringify({
+            coins: cloudState.coins,
+            matched: cloudState.totalMatchedCount,
+            gifts: cloudState.giftCount
+          }));
+
           updateGaugeUI(false);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.log("클라우드 연결 불안정: 기기 백업 데이터를 안전하게 유지합니다.");
+        updateGaugeUI(false);
+      }
     }
 
+    // 🛡️ [안전장치 3] 빈 값 덮어쓰기 방지 밸브 및 실시간 기기 백업
     async function syncToCloud() {
+      // 1. 기기 로컬 금고에는 무조건 즉시 보존
+      localStorage.setItem('woojin_wallet_backup', JSON.stringify({
+        coins: cloudState.coins,
+        matched: cloudState.totalMatchedCount,
+        gifts: cloudState.giftCount
+      }));
+
+      // 2. 서버에서 아직 데이터를 못 읽어왔는데 0점인 상태라면 구글 시트에 덮어쓰지 않고 대기
+      if (!cloudState.isLoadedFromCloud && cloudState.coins === 0 && cloudState.giftCount === 0) {
+        return;
+      }
+
       try {
         if (cloudState.totalMatchedCount >= cloudState.maxGauge) {
           cloudState.giftCount += 1;
           cloudState.coins += 500;
           cloudState.totalMatchedCount = 0;
+
+          // 보너스 획득 즉시 로컬 백업 갱신
+          localStorage.setItem('woojin_wallet_backup', JSON.stringify({
+            coins: cloudState.coins,
+            matched: cloudState.totalMatchedCount,
+            gifts: cloudState.giftCount
+          }));
+
           sound.gift();
           confetti({ particleCount: 250, spread: 85, origin: { y: 0.6 } });
         }
+
         await fetch(CLOUD_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({
@@ -732,7 +770,9 @@
             gifts: cloudState.giftCount
           })
         });
-      } catch (e) {}
+      } catch (e) {
+        console.log("네트워크 지연: 서버 전송 실패(기기에는 안전하게 보관됨)");
+      }
     }
 
     function updateGaugeUI(sendToCloud = true) {
@@ -934,7 +974,6 @@
       updateRoundProgressBadgeUI();
     }
 
-    // 💡 출제 문장 필터링: 졸업(cooldown) 제외 + 오늘 이미 원샷 달성(🛡️)한 문장 제외
     function prepareActiveQuestions(list) {
       const now = Date.now();
       const today = getTodayKey();
@@ -943,12 +982,10 @@
         const stat = sentenceStatsDB[item.en];
         if (!stat) return true;
 
-        // 1. 졸업(휴식 중)인 문장 제외
         if (stat.cooldownUntil && stat.cooldownUntil > now) {
           return false;
         }
 
-        // 2. 오늘 이미 원샷(+1스택)을 성공해 세이프락 걸린 문장 제외
         if (stat.lastStreakDate === today) {
           return false;
         }
@@ -982,7 +1019,6 @@
       });
     }
 
-    // 💡 오늘 학습할 문장이 0개가 되었을 때 표시하는 올 클리어 화면
     function renderAllClearScreen() {
       box1.style.display = "none";
       stage1Box.style.display = "none";
@@ -1310,12 +1346,10 @@
       return Math.abs(hash);
     }
 
-    /* 💡 로딩 및 회차 순환 로직 (오늘 완료된 문장 제외 및 올 클리어 판정) */
     function loadQuestion(idx) {
       stopSTT();
       hideJackpotToastImmediately();
 
-      // 한 바퀴를 완주한 경우: 새 회차 카운트 +1 및 남은 문장 재집계
       if (idx >= questions.length) {
         incrementTodayLoopCount();
         questions = prepareActiveQuestions(allQuestionsList);
@@ -1324,7 +1358,6 @@
         curIndex = idx;
       }
 
-      // 오늘 풀어야 할 문장이 더 이상 없는 경우 (올 클리어!)
       if (questions.length === 0) {
         renderAllClearScreen();
         return;
@@ -1675,7 +1708,7 @@
         } else if (trials > 0) {
           if (rate < 60) {
             statusKey = 'WEAK';
-            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-rose-100 text-rose-700 border border-rose-200">⚠️ 약점 재복습</span>';
+            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-rose-100 text-rose-700 border border-rose-200">⚠️️ 약점 재복습</span>';
             briefText = '정답률 낮음 (5점 보너스 우선 출제 대상)';
           } else if (daysPassed !== null && daysPassed >= 7) {
             statusKey = 'STALE';
