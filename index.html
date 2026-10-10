@@ -528,7 +528,7 @@
     }
 
     /* ==========================================================================
-       3. 구글 시트 & 클라우드 연동 (매칭게임 완전 호환 오프라인 안전장치 탑재)
+       3. 구글 시트 & 클라우드 연동 (오프라인 깃발 기반 완벽 동기화 시스템)
        ========================================================================== */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR8N05mr2cDulqUEd6ws-n6SOOE-L3yaBSUDg43QPP1Xmz65CCeu_5Kl84OFzUi8MoNlRRpoATStnfW/pub?output=csv";
     const CLOUD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlPT7SuPsd70jPhYkj7hsB23PF7wCk9FqQBI2psOo1yDdBDKdmpmraflnGMOt1cpX-kA/exec";
@@ -551,14 +551,14 @@
     let questions = [];
     let curIndex = 0;
     
-    // 🛡️ [안전장치 1] 매칭게임과 동일한 로컬 백업 금고(woojin_wallet_backup)를 1차 기본값으로 채택
+    // 🛡️ [안전장치 1] 매칭게임과 동일한 로컬 금고(woojin_wallet_backup)를 1차 기본값으로 채택
     let savedWallet = JSON.parse(localStorage.getItem('woojin_wallet_backup')) || { coins: 0, matched: 0, gifts: 0 };
     let cloudState = {
       coins: savedWallet.coins || 0,
       totalMatchedCount: savedWallet.matched || 0,
       giftCount: savedWallet.gifts || 0,
       maxGauge: 500,
-      isLoadedFromCloud: false // 🟢 클라우드 데이터 정상 확인 밸브
+      isLoadedFromCloud: false
     };
 
     let sentenceStatsDB = JSON.parse(localStorage.getItem('block_sentence_stats')) || {};
@@ -704,17 +704,28 @@
       todayMicCount.classList.add('animate-count-pop');
     }
 
-    // 🛡️️ [안전장치 2] 클라우드 로드 성공 시에만 갱신 & 시트 우선권 100% 보장 & 로컬 금고 동기화
+    // 🛡️ [안전장치 2] 오프라인 미전송 깃발(Pending Flag) 기반 클라우드 동기화
     async function syncFromCloud() {
       try {
         const res = await fetch(CLOUD_SCRIPT_URL);
         const data = await res.json();
         if (data.coins !== undefined) {
+          const isPending = localStorage.getItem('woojin_wallet_pending') === 'true';
+
+          // ⚠️ 오프라인 플레이로 미전송 점수가 남아있는 경우에만 기기 값을 서버로 역전송
+          if (isPending) {
+            cloudState.maxGauge = Number(data.maxGauge) || 500;
+            cloudState.isLoadedFromCloud = true;
+            updateGaugeUI(true); // 서버로 업로드 시도 (성공 시 깃발 해제)
+            return;
+          }
+
+          // 🟢 평소 및 부모님이 시트를 직접 수정한 경우: 구글 시트 값이 100% 최우선!
           cloudState.coins = Number(data.coins) || 0;
           cloudState.giftCount = Number(data.gifts) || 0;
           cloudState.totalMatchedCount = Number(data.matched) || 0;
           cloudState.maxGauge = Number(data.maxGauge) || 500;
-          cloudState.isLoadedFromCloud = true; // 🟢 클라우드 정상 수신 확인
+          cloudState.isLoadedFromCloud = true;
 
           // 매칭게임과 동일한 로컬 백업 금고 최신화
           localStorage.setItem('woojin_wallet_backup', JSON.stringify({
@@ -731,7 +742,7 @@
       }
     }
 
-    // 🛡️ [안전장치 3] 빈 값 덮어쓰기 방지 밸브 및 실시간 기기 백업
+    // 🛡️ [안전장치 3] 전송 실패 시 깃발 설정 & 성공 시 깃발 해제
     async function syncToCloud() {
       // 1. 기기 로컬 금고에는 무조건 즉시 보존
       localStorage.setItem('woojin_wallet_backup', JSON.stringify({
@@ -740,7 +751,7 @@
         gifts: cloudState.giftCount
       }));
 
-      // 2. 서버에서 아직 데이터를 못 읽어왔는데 0점인 상태라면 구글 시트에 덮어쓰지 않고 대기
+      // 2. 서버에서 아직 데이터를 못 읽어왔는데 0점인 상태라면 시트에 덮어쓰지 않고 대기
       if (!cloudState.isLoadedFromCloud && cloudState.coins === 0 && cloudState.giftCount === 0) {
         return;
       }
@@ -762,7 +773,7 @@
           confetti({ particleCount: 250, spread: 85, origin: { y: 0.6 } });
         }
 
-        await fetch(CLOUD_SCRIPT_URL, {
+        const response = await fetch(CLOUD_SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({
             coins: cloudState.coins,
@@ -770,8 +781,18 @@
             gifts: cloudState.giftCount
           })
         });
+
+        if (response.ok) {
+          // 🟢 서버 전송 성공: 오프라인 깃발 해제
+          localStorage.removeItem('woojin_wallet_pending');
+        } else {
+          // 전송 실패: 깃발 설정
+          localStorage.setItem('woojin_wallet_pending', 'true');
+        }
       } catch (e) {
-        console.log("네트워크 지연: 서버 전송 실패(기기에는 안전하게 보관됨)");
+        // ⚠️ 네트워크 단절 등으로 서버 전송 실패: 깃발 설정해 두기
+        localStorage.setItem('woojin_wallet_pending', 'true');
+        console.log("네트워크 지연: 서버 전송 실패(기기 백업 및 오프라인 깃발 보존)");
       }
     }
 
@@ -1708,7 +1729,7 @@
         } else if (trials > 0) {
           if (rate < 60) {
             statusKey = 'WEAK';
-            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-rose-100 text-rose-700 border border-rose-200">⚠️️ 약점 재복습</span>';
+            statusBadge = '<span class="px-2.5 py-1 rounded-xl text-xs font-black bg-rose-100 text-rose-700 border border-rose-200">⚠ 약점 재복습</span>';
             briefText = '정답률 낮음 (5점 보너스 우선 출제 대상)';
           } else if (daysPassed !== null && daysPassed >= 7) {
             statusKey = 'STALE';
